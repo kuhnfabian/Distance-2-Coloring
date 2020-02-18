@@ -1,0 +1,50 @@
+%\mypar{Concentration Bounds}
+%
+Before we continue with the details of our algorithm we state the following standard Chernoff bound that we utilize frequently in our proofs. 
+%We shall frequently utilize the following standard Chernoff  bounds.
+
+\begin{proposition}[Chernoff]
+Let $X_1, X_2, \ldots, X_n$ be independent Bernoulli trials,
+%such that $\Pr[X_i] = p_i$. Let 
+$X = \sum_{i=1}^n X_i$, and $\mu = E[X]$. Then, for any $0 < \delta \le 1$,
+\begin{align}
+\label{eq:chernoff-upper}
+\Pr[X \ge (1+\delta)\mu] & \le e^{-\mu \delta^2/3}     \\
+\label{eq:chernoff-lower}
+\Pr[X \le (1-\delta)\mu] & \le e^{-\mu \delta^2/2}\ .
+\end{align}
+\iffalse
+\begin{equation}
+\Pr[X \ge (1+\delta)\mu] \le e^{-\mu \delta^2/3} %\left(\frac{e^\delta}{(1+\delta)^{1+\delta}} \right)\ .
+\label{eq:chernoff-upper}
+\end{equation}
+%\[ \Pr[X \ge (1+\delta)\mu] \le \left(\frac{e^\delta}{(1+\delta)^{1+\delta}} \right)\ . \]
+and
+\begin{equation}
+\Pr[X \le (1-\delta)\mu] \le e^{-\mu \delta^2/2}\ .
+\label{eq:chernoff-lower}
+\end{equation}
+\fi
+%If also $\mu = \Omega(\log n)$, then $X = O(\mu)$, w.h.p.
+Also,
+\begin{equation}
+    X = O(\mu + \log n), \text{w.h.p.}
+    \label{eq:concentration}
+\end{equation}
+\label{P:chernoff}
+\end{proposition}
+
+We also use the following inequality:
+\begin{equation}
+(1-1/x)^{x-1} \ge 1/e, \text{ for any } x > 1.
+\label{eq:inv-e}
+\end{equation}
+
+
+\iffalse
+\begin{corollary}
+Let $X_1, X_2, \ldots, X_m$ be independent Bernoulli trials.
+Let $X = \sum_{i=1}^n$ and $\mu = E[X]$. Assume $\mu = \Omega(\log n)$. Then, $X = O(\mu)$, w.h.p.
+\label{C:chernoff}
+\end{corollary}
+\fi

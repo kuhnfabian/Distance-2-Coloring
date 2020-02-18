@@ -1,0 +1,135 @@
+\section{Derandomization of Local Refinement Splitting}
+\label{app:localRefinementSplitting}
+We begin with the definition of a network decomposition that is adapted to the {\congest} model and to power graphs. Then, in \Cref{ssec:derandSplitting} we use a network decomposition of $G^2$ (that can be computed with the algorithm from \cite{RG19}) to derandomize a zero-round algorithm for local refinement splitting.
+
+%\subsection{Network Decomposition with Congestion}
+\label{ssec:networkDecomp}
+\begin{definition}[Network decomposition with congestion, \cite{RG19}]
+\label{def:nd} Let $k>0$ be an integer. 
+An $(\alpha,\beta)$-network decomposition with congestion $\kappa$ of $G^k$ of a graph $G=(V,E)$ is a partition of $V$ into clusters $C_1,\dots,C_p$ together with associated subtrees $T_1,\ldots,T_p$ of $G$ and a color $\gamma_i\in\{1,\dots,\alpha\}$ for each cluster $C_i$ such that
+\begin{enumerate}[(i)]
+\item the tree $T_i$ of cluster $C_i$ contains all nodes of $C_i$ (but it might contain other nodes as well)
+\item each tree $T_i$ has diameter at most $\beta$
+\item clusters that are connected by a path of length $\leq k$ in $G$ are assigned different colors
+\item each edge of $G$ is contained in at most $\kappa$ trees of the same color
+\end{enumerate}
+\end{definition}
+
+When we assume to have a network decomposition on a graph, we require that each node knows the color of the cluster it belongs to and for each of its incident edges $e$ the set of associated trees $e$ is contained in. Note that a decomposition according to this definition has weak diameter $\beta$ and a strong network decomposition is a decomposition with congestion 1 where the tree $T_i$ of each cluster $C_i$ contains exactly the nodes in $C_i$.
+
+\begin{theorem}[\cite{RG19}]
+\label{thm:rozhon}
+There is a deterministic algorithm that computes an $\left(O(\log n),k\cdot O(\log^3n)\right)$-network decomposition of $G^k$ with congestion $O(\log n)$ in $O(k\cdot \log^8 n)$ rounds in the {\congest} model.\footnote{In on-going unpublished work \cite{RG19personal} it is shown that diameter and runtime can be improved. These improvements carry over to our results.}
+%There is a deterministic algorithm that computes an $\left(\bigO{\log n},k\cdot \bigO{\log^3n}\right)$-network decomposition of $G^k$ with congestion $\bigO{\log n}$ in $\bigO{k\cdot \log^8n}$ rounds in the {\congest} model.\footnote{In on-going unpublished work \cite{RG19personal} it is shown that diameter and runtime can be improved. These improvements carry over to our results.}
+\end{theorem}
+
+%\subsection{Derandomization of Local Refinement Splitting}
+ \label{ssec:derandSplitting}
+ 
+
+As long as degrees are at least $\polylog n$ the degrees of all nodes can be split roughly in half without communication by letting each vertex choose one of two subgraphs uniformly at random. We show that this algorithm can be derandomized with a network decomposition of $G^2$. 
+Formally, we  solve the following more general version of the problem efficiently and deterministically.
+
+\refinementSplitting*
+
+Note that we only require a bound on vertices with a degree of at least $12\log n/\lambda^2$. Thus coloring each vertex red or blue with probability $1/2$ each solves the problem with high probability. More formally, introduce a random variable $F^i_v\in \{0,1\}$ for each node $v\in V$ and each $i=1,\ldots,p$, where $F^i_v=1$ if $\deg_i(v)\geq 12\log n/\lambda^2$ and  $v$  has more than $(1+\lambda) \deg_i(v)/2$ neighbors of one color in $V_i$, and $F^i_v=0$ otherwise. The \emph{flag} $F^i_v$ indicates whether the splitting failed locally for $v$ in set $V_i$. 
+%\begin{align}
+    %F_v = \left\{\begin{array}{lr}
+        %1, & \deg(v)\geq 10\log n/\lambda^2\text{ and } v \text{ has $>(1+\lambda) \deg(v)/2$ neighbors of one color} \\
+%        0, & \text{otherwise }
+%        \end{array}\right. 
+%\end{align}
+By a Chernoff  bound one can show that  $Pr(F^i_v=1)\leq 1/n^2$ for all vertices and all $i$. Let $F_v=\sum_{1\leq i\leq p}F^i_v$. By a union bound over the $p< n$ parts we obtain that $Pr(F_v=1)<1/n$  and thus we obtain 
+\begin{align}
+E[\sum_{v\in V}F_v]<1~.
+\end{align}
+This will later be sufficient to derandomize the algorithm. To make the derandomization efficient
+ we next show that we can similarly bound the sum of the expectations of $F_v, v\in V$ if the random choices of the vertices are only $\Theta(\log n)$-wise independent. First we define the notion of limited independence and restate a Chernoff bound that holds with limited independence. 
+
+\begin{definition}[\cite{Vadhan12}]
+For $N,M,k\in\mathbb{N}$ such that $k\leq N$, a family of functions $\mathcal{H}=\{h:[N]\to [M]\}$ is $k$-wise independent if for all distinct $x_1,\dots,x_k\in[N]$, the random variables $h(x_1),\dots,h(x_k)$ are independent and uniformly distributed in $[M]$ when $h$ is chosen uniformly at random from $\mathcal{H}$.
+\end{definition}
+We use the following Chernoff bound that works with limited independence.
+\begin{theorem}[Theorem 5 in \cite{chernoffLimited95}] \label{thm:kindependent}
+Let $X$ be the sum of $k$-wise independent $[0,1]$-valued random variables with expectation $\mu=E(X)$ and let $\delta\leq 1$. Then we have
+\[Pr(|X-\mu|\geq \delta\mu)\leq e^{-\lfloor \min\{k/2,\delta^2\mu/3\}\rfloor}~.\] 
+\end{theorem}
+
+The next lemma states $\polylog n$-wise independent random bits for the vertices are sufficient to obtain the aforementioned bound on the expected sum of the flags. 
+\begin{lemma}
+\label{lem:limIndProcess}
+Let $\lambda>0$ be a parameter, let $G=(V,E)$ be a $n$-node graph, with vertex partition $V_1,\ldots,V_p$ and 
+let each vertex of $G$ color itself red or blue with probability $1/2$ each where random choices of distinct nodes are $10\log n$-wise independent. 
+Then we have $E[\sum_{v\in V}F_v]<1$. 
+\end{lemma}
+
+\begin{proof}
+For $1\leq i\leq p$ and a vertex $v$ with  $deg_i(v)\geq 12\log n/\lambda^2$ let $X_i$ be the number of red neighbors in $V_i$. We obtain $\mu_i=E[X]=\deg_i(v)/2\geq 6\log n /\lambda^2$ and $X_i$ is the sum of $[0,1]$-valued $k$-wise independent random variables with $k=10\log n$. 
+By \Cref{thm:kindependent} with $\delta=\lambda$ we obtain that the probability that $v$ has more or less than $(1\pm\lambda)\deg_i(v)/2$ red neighbors in $V_i$ is bounded by
+\begin{align}
+Pr(|X_i-\mu_i|\geq \lambda\mu_i)\leq e^{-\lfloor \min\{k/2,\lambda^2\mu_i/3\}\rfloor} \leq e^{-\lfloor \min\{5\log n,12\log n/3\}\rfloor}< e\cdot n^{-4}~.
+\end{align}
+The exact same analysis also holds for the number of blue neighbors in $V_i$ and with a union bound over both colors and all $1\leq i\leq p< n$ we obtain that $Pr(F_v=1)< 1/n$. 
+Because $F_v$ is a $0$ or $1$ valued random variable this implies 
+%\mh{The bound $Pr(F_v=1)\le 1/n$ isn't quite enough for this. It seems that a stronger bound would hold there.}\ym{Is it resolved?}\fk{I changed it slightly, I think it should now be fine.}
+\begin{align*}
+    E\left[\sum_{v\in V}F_v\right]<1~.  & & \qedhere
+\end{align*}
+\end{proof}
+
+To derandomize the aforementioned algorithm we need to produce random coins for the vertices with limited independence from short random seeds as given by the next theorem.
+
+\begin{theorem}[\cite{Vadhan12}]\label{thm:seed}
+For every $a,c,k$, there is a family of $k$-wise independent hash functions $\mathcal{H}=\{h:\{0,1\}^a\to\{0,1\}^c\}$ such that choosing a random function
+from $\mathcal{H}$ takes $k\cdot\max\{a,c\}$ random bits.
+\end{theorem}
+In the proof of our main derandomization result (\Cref{lem:derandSplitting}) we will use one random seed for each cluster of a suitable network decomposition.  
+In particular, we can use \Cref{thm:seed} to produce fair random coins for up to  $n$ vertices (of a cluster) that are $k$-wise independent for $k=\Theta(\log n)$ from a random seed of length $k\cdot \max\{a,c\}=O(\log^2 n)$ by setting $a=O(\log n)$ and $c=1$. 
+Then we obtain a deterministic algorithm for computing a local refinement splitting by iterating through the color classes of the decomposition and  using  the method of conditional expectation with objective function $E[\sum_{v\in V}F_v]$ to find a \emph{good seed} for each cluster. Afterwards the 'randomized' algorithm is executed with the good seeds and we obtain $E[\sum_{v\in V}F_v]<1$, i.e., $E[\sum_{v\in V}F_v]=0$ and the flag $F_v$ of every vertex $v\in V$ equals zero, that is, we have computed a local refinement splitting. Formally, we show the following result.
+
+\derandRefinementSplitting*
+
+\begin{proof}[Proof of \Cref{lem:derandSplitting}]
+Let $V_1,\ldots,V_p$ be the given partition of the vertices. 
+We first use \Cref{thm:rozhon} to compute a $(O(\log n),O(\log^3 n))$-network decomposition of $G^2$ with congestion $O(\log n)$ in $O(\log^8 n)$ rounds; note that this network decomposition ignores the partition $V_1,\ldots,V_p$. Then, with a random seed of length $\Theta(\log^2 n)$ for each cluster (apply \Cref{thm:seed} with $k=\Theta(\log n)$, $a=O(\log n)$ and $c=1$) we can produce fair coins, one for each node of the cluster,  that are $10\log n$-wise independent within the cluster and completely independent for distinct clusters. Here, we use the same globally known procedure in each cluster to compute the coin of a vertex $v$ given its ID and the outcome of the random seed. 
+
+Recall that $F_v$ denotes the random variable that indicates whether the splitting failed locally at a  vertex $v$ for any $V_i$, $1\leq i\leq p$.
+By \Cref{lem:limIndProcess}, we have $E[\sum_{v\in V}F_v]<1$ over the randomness of all random seeds.  The objective is to find a collection of \emph{good seeds} 
+such that the 'randomized' algorithm if deterministically executed with the good seeds satisfies $\sum_{v\in V}F_v<1$. 
+To this end we iterate through the color classes of the network decomposition and in parallel fix the seeds of clusters of the same color class. These seeds can be fixed independently and in parallel as any two clusters with the same color are at least three hops apart and thus none of the random variables $F_v,v\in V$ is influenced by more than one cluster of the same color. We explain how to fix the random seed of one cluster $\mathcal{C}$. 
+
+\paragraph{Deterministically finding a good random seed of cluster $\mathcal{C}$:}Let $N(\mathcal{C})$ be the set of vertices of $G$ that are contained in the cluster or have a neighbor in the cluster. Note that $N(\mathcal{C})$ has weak diameter $O(\log^3 n)+O(1)=O(\log^3 n)$.  We use the method of conditional expectation to iteratively determine the bits of the random seed $S^{\mathcal{C}}=S_1,\ldots,S_{l}$ of the cluster where $l=O(\log^2 n)$ is the seed length. 
+Here for an already processed cluster $\mathcal{C}'$ we denote the already fixed seed by $s^{\mathcal{C}'}$.
+To fix one bit $S_i$ of the seed $S^{\mathcal{C}}$ assume that the bits $S_j=s_j$, $j<i$ are already determined. We set bit $S_i\in\{0,1\}$ of the seed $S^{\mathcal{C}}$ as follows (we will later argue how a cluster leader can compute $s_i$) 
+\begin{align}
+s_i & =\argmin_{b\in \{0,1\}} \left\{E\left[\sum_{v\in V} F_v \mid S_i=b \wedge  \bigwedge_{j<i} S_j=s_j \wedge \bigwedge_{\text{processed cluster }\mathcal{C}'}S^{\mathcal{C}'}=s^{\mathcal{C}'} \right]\right\} \label{eqn:argmin}\\
+& =\argmin_{b\in \{0,1\}} \left\{\sum_{v\in V}E\left[F_v \mid S_i=b \wedge  \bigwedge_{j<i} S_j=s_j \wedge \bigwedge_{\text{processed cluster }\mathcal{C}'}S^{\mathcal{C}'}=s^{\mathcal{C}'}  \right]\right\}~. \\
+& \stackrel{(*)}{=}\argmin_{b\in \{0,1\}} \left\{\sum_{v\in N(\mathcal{C})}E\left[F_v \mid S_i=b \wedge  \bigwedge_{j<i} S_j=s_j \wedge \bigwedge_{\text{processed cluster }\mathcal{C}'}S^{\mathcal{C}'}=s^{\mathcal{C}'}  \right]\right\}
+\end{align}
+
+Equality $(*)$ follows as $F_v$ for $v\notin N(\mathcal{C})$ does not depend on the choice of $S_i$. 
+First, note, that the law of total probability guarantees that for $S_i=s_i$ we have 
+\begin{align} 
+E\left[\sum_{v\in V} F_v \mid S_i=s_i \wedge  \bigwedge_{j<i} S_j=s_j \wedge \bigwedge_{\text{processed cluster }\mathcal{C}'}S^{\mathcal{C}'}=s^{\mathcal{C}'}  \right] \\
+\leq E\left[\sum_{v\in V} F_v \mid  \bigwedge_{j<i} S_j=s_j \wedge \bigwedge_{\text{processed cluster }\mathcal{C}'}S^{\mathcal{C}'}=s^{\mathcal{C}'}  \right]
+\end{align}
+As we initially have $E[\sum_{v\in V}F_v]<1$, we obtain $\sum_{v\in V}F_v<1$ once all random seeds in all clusters are fixed. Thus the integer $\sum_{v\in V}F_v$ has to equal to $0$ if the algorithm is run deterministically with the fixed seeds of all clusters and in the process where each vertex uses its coin from its cluster's random seed to determine its color no vertex fails.
+
+\paragraph{The value $s_i$ can be computed by a leader: }For $b\in \{0,1\}$ each vertex $v\in N(\mathcal{C})$ computes the two values 
+$\alpha_b(v)=E[ F_v \mid S_i=b \wedge  \bigwedge_{j<i} S_j=s_j \wedge \bigwedge_{\text{processed cluster }\mathcal{C}'}S^{\mathcal{C}'}=s^{\mathcal{C}'} ]$~. To this end $v$ learns the IDs of its immediate neighbors (or the color of its immediate neighbor if some neighbors belong to a different cluster and 
+already know their output color in the case that they are contained in a previously processed cluster) and the already fixed prefix of the random seed in their own cluster. 
+We next formally prove that this information is sufficient to compute both values.
+
+\medskip
+\noindent\textbf{Claim:} With the IDs of its immediate neighbors, the colors of potentially already colored neighbors from previously processed clusters, the cluster ID of each of its adjacent vertices and the already fixed prefix in its own cluster $v$ can locally compute $\alpha_0(v)$ and $\alpha_1(v)$. 
+\begin{proof}To determine the values $\alpha_0(v)$ and $\alpha_1(v)$ a node has to know the probability distribution of its neighbors being colored red or blue. This distribution is independent for neighbors in distinct clusters. Neighbors of already processed vertices are either colored red or blue and do not depend on any randomness. Neighbors of $v$ that are in the same cluster (this does not have to be the cluster of $v$) do not act independently but obtain their randomness from a shared random seed. As it is globally known how vertices use their ID to extract their decisions from the random seed and random seeds in all clusters are build identically, that is, each seed is long enough to produce coins for all IDs in the graph and it is globally known how to extract the value of the random coin related to a specific ID from a random seed, node $v$ can compute the desired two values with knowing the partition of its neighbors into different clusters.  For neighbors that are part of $v$'s cluster $\mathcal{C}$, $v$ additionally needs to know the prefix of the already fixed seed to determine the influence of the next bit of the seed on their probabilities.  
+\end{proof}
+After each vertex in $N(\mathcal{C})$ has computed its two values we aggregate two sums of these values in the cluster leader vertex. 
+This aggregation can be done in $O(\log n\cdot \log^3 n)$ rounds over the tree corresponding to the cluster; here the additional $\log n$-term is due to the congestion in one color class. 
+ The leader sets $s_i=0$ if $\sum_{v\in N(\mathcal{C})}\alpha_0(v)\leq \sum_{v\in N(\mathcal{C})}\alpha_1(v)$ and $s_i=1$ otherwise, then it distributes the choice to all vertices in $N(\mathcal{C})$. The random variables $F_v$ for all $v\notin N(\mathcal{C})$ do not depend on the choice of the seed and taking the better of the two aggregate values is identical to taking the desired $\argmin$ in \Cref{eqn:argmin}. 
+
+
+\paragraph{Runtime:}
+Computing the network decomposition takes $O(\log^8 n)$ rounds. Afterwards we iterate through $O(\log n)$ color classes and the $O(\log^2 n)$ bits of the random seeds of each cluster of one color in parallel. Due to the congestion and the weak cluster diameter we need $O(\log^4)$ rounds to aggregate the values to decide on a single bit, that is, using the network decomposition has a complexity of $O(\log n\log^2 n\cdot \log^4 n)=O(\log^7 n)$. Note that a vertex can learn the necessary information (except for the seed prefix that it already knows by construction) to compute the values $\alpha_0(v)$ and $\alpha_1(v)$ in constant time.
+\end{proof}
+

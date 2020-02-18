@@ -1,0 +1,24 @@
+\subsection{Summarizing the Ideas for \Cref{thm:d2ColoringDelta} }
+\label{ssec:sumDeltaDeta}
+In this section we summarize our algorithm to obtain efficient algorithms for coloring $G^2$ with $\Delta^2+1$ colors if $\Delta$ is small, that is, we explain the core ideas of the following theorem.
+
+
+\smallskip
+\textsc{\Cref{thm:d2ColoringDelta}.} 
+\emph{There is a deterministic \CONGEST algorithm that d2-colors a graph with $\Delta^2+1$ colors in $O(\Delta^2+\logstar n)$ rounds.}
+\smallskip
+
+The algorithm of \Cref{thm:d2ColoringDelta} has three components that are executed in the presented order:
+
+\smallskip
+
+\noindent\textbf{ Linial: $O(\Delta^4)$ Colors (\Cref{thm:Liniald2}):}  A standard pipelined version of Linial's algorithm run on $G^2$ computes a $O(\Delta^4)$-coloring of $G^2$ in $O(\Delta\cdot \logstar n)$ rounds. We show that the runtime can be reduced to $O(\Delta+\logstar n)$ rounds. 
+
+\smallskip
+
+\noindent\textbf{Locally Iterative: $O(\Delta^4)\rightarrow O(\Delta^2)$  (\Cref{thm:d2locIt}) } In \cite{barenboim15,BEG18} it was shown that there is a {\congest} algorithm that colors the network graph $G$ with $O(\Delta)$ colors in $O(\sqrt{\Delta})$ rounds given an $O(\Delta^2)$-coloring of the input graph. With \Cref{thm:Liniald2} we can compute a $O((\Delta(G^2))^2)=O(\Delta^4)$-coloring of $G^2$ in $O(\Delta+\logstar n)$ rounds. Using this coloring we run the algorithm from \cite{barenboim15,BEG18} on $G^2$ and simulate one round of it in $\Delta$ rounds of communication on $G$. That way, we obtain a coloring of $G^2$ with $O(\Delta(G^2)=O(\Delta^2)$ colors and the runtime is $O(\Delta\cdot \sqrt{\Delta(G^2)})=O(\Delta^2)$.  
+As the combination of \cite{barenboim15,BEG18} is slightly involved (e.g., it includes the computation of arbdefective colorings) we present a self contained algorithm for coloring $G^2$ with $O(\Delta^2)$ colors in $O(\Delta^2+\logstar n)$ rounds. Our algorithm is based on the \emph{locally iterative} algorithm in \cite{BEG18}. 
+
+\smallskip
+
+\noindent\textbf{Color Reduction: $O(\Delta^2)\rightarrow \Delta^2+1$ (\Cref{thm:delta2_simple_color}).} In the \emph{iterative color reduction} for $G$ one iteratively let's nodes with the largest color class pick a smaller color until one obtains a coloring with $\Delta(G)+1$ colors. The crux in implementing this algorithm for $G^2$ is, that nodes, need to know all colors that are used in its $d2$-neighborhood to recolor themselves. A naive approach to learn these colors would take $\Delta$ rounds for each recoloring step and result in a runtime of $O(\Delta^3)$ rounds. Using the fact, that at most one vertex in each neighborhood of a node changes its color in one round we show that the simple color reduction can be done in $O(\Delta^2)$ rounds.

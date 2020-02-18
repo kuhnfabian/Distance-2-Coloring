@@ -1,0 +1,231 @@
+\section{Concentration Bounds}
+We state here the key concentration bounds that we use.
+
+\input{prelim.tex}
+
+
+\section{Deferred Proofs of Section \ref{sec:randAlg}}
+% \subsection{Deferred Proofs of Section \ref{ssec:similarity}}
+
+\subsection{Deferred Proofs of Section \ref{ssec:similarity}}
+\label{app:similarity}
+
+\textsc{Theorem \ref{T:similarity}:} 
+\emph{Let $k \in \{3,6\}$.
+Let $u,v$ be d2-neighbors. 
+If $(u,v) \in H_{1-1/k}$ (i.e., if $|S_v \cap S_u| \ge (1-1/(2k)) c_{10} \log n$), then they share at least $(1-1/k) \Delta^2$ common d2-neighbors, w.h.p.,
+while if $(u,v) \not\in H$, then they share fewer than $(1-1/(4k)) \Delta^2$ common d2-neighbors, w.h.p.}
+%\begin{proof}[Proof of \Cref{T:similarity}]
+\begin{proof}
+We give the proof only for $k=3$, for readability.
+We indicated above how the case $\Delta^2 \le c_{10}\log n$ is treated; we assume from now that $\Delta^2 \ge c_{10}\log n$.
+%If $\Delta^2 \le c_{10}\log n$, nodes are $H$-neighbors iff they have at least $4d^2/5$ common d2-neighbors. Assume then that $\Delta^2 \ge c_{10}\log n$.
+
+Let $I_{uv} = G^2[u]\cap G^2[v]$ be the intersection of the d2-neighborhoods of $u$ and $v$. 
+For each $w \in I_{uv}$, let $X_w$ be the indicator r.v.\ that $w$ is
+selected into the random sample $S$ and let $X = \sum_{w \in I_{uv}} X_w$. Note that $\mu = E[X] = c_{10} (\log n)/\Delta^2 \cdot |I_{uv}|$.
+
+First, suppose $|I_{uv}| \le \nicefrac{2}{3}\, \Delta^2$.
+Then $\mu \le \nicefrac{2}{3}\, (c_{10}\log n)$, and
+by (\ref{eq:chernoff-upper}), the probability that $u$ and $v$ are neighbors in $H$ is bounded by
+  \[ \Pr[uv \in H] = \Pr[X \ge \nicefrac{5}{6}\, c_{10} \log n]
+\le \Pr[X \ge \nicefrac{5}{4}\,\mu] \le e^{-\nicefrac{2c_{10}}{3\cdot 48}\, \log n} \le n^{-c_{10}/72}\ . \]
+%\ym{MH said: Need to check better this last inequality.} 
+Thus, setting $c_{10}$ large enough implies that the first half of the claim holds.
+
+Now, suppose $|I_{uv}| \ge \nicefrac{11}{12}\, \Delta^2$.
+Then, $\mu \ge \nicefrac{11}{12}\, (c_{10}\log n)$.
+By (\ref{eq:chernoff-lower}), the probability that $u$ and $v$ are non-neighbors in $H$ is bounded above by
+  \[ \Pr[uv \not\in H] = \Pr[X < \nicefrac{5}{6}\, c_{10} \log n]
+\le \Pr[X < \nicefrac{10}{11}\,\mu] \le e^{-\mu/(2\cdot 11^2)} \le e^{-c_{10}/(2\cdot 11 \cdot 12)\, \log n} = n^{-\Omega(c_{10})}\ . \]
+Thus, setting $c_{10}$ large enough implies that the second half of the claim holds.
+\end{proof}
+
+\textsc{Lemma \ref{L:rand-nbor}:}
+\emph{A multiset $R_u$ of independent uniformly random $H$-neighbors of node $u$ can be generated in $O(|R_u|+\log n)$ rounds.}
+\begin{proof}
+Each d2-neighbor's string $r_w$ gets forwarded (by $u'$) with probability $2^{c_{11}}\log n / \Delta^2$. Thus, the number  $y_{u}$ of strings that get forwarded to $u$ is expected $E[y_u] = 2^{c_{11}} \log n$. Setting $c_{11} \ge \max(4, 1+\log c_3)$.
+By Chernoff (\ref{eq:chernoff-lower}), $u$ receives at least $2^{c_{11}-1} \log n \ge c_3 \log n$ strings with probability $1-1/n^2$.
+Thus, with probability at least $1-1/n$, all nodes receive at least $c_3 \log n$ strings.
+Hence, the node $u$ will correctly identify the $H$-neighbor whose bitstrings have the smallest XOR with its random string, which gives a uniformly random sampling.
+The probability that some pair of nodes receive the same bitstring is at most $2^{-4\log n} = n^{-4}$. Thus, with probability at least $1-1/n^2$, there is always a unique node with the smallest XORed string.
+
+Independence follows because a collection $\{r_w\}_w$ of uniformly random bitstrings that is XORed with a particular (not necessarily random) bitstring $b_u$ forming collection $\{ b_u \oplus r_w\}_w$ stays uniformly random.
+The same holds then for the collection of strings $\{b_u\}_u$
+that is XORed with a string $r_w$ of a fixed node.
+\end{proof}
+
+
+
+\subsection{Deferred Proofs of Section \ref{ssec:dense}}
+\label{app:struct}
+\textsc{Observation \ref{O:sparse}:} \emph{
+Every live node is solid after Step 1 of \alg{d2-Color}, w.h.p.}
+\begin{proof}
+%\begin{proof}[Proof of \Cref{O:sparse}]
+Let $v$ be a node of leeway $\phi \ge c_1 \Delta^2$ at the end of Step 2.
+Then, in each iteration of the step, the color tried by $v$ has probability $\phi/\Delta^2 \ge c_1$ of being previously unused by d2-neighbors of $v$. Furthermore, the probability that no other d2-neighbor tries the same color in the same round is at least $(1-1/(\Delta^2+1))^{\Delta^2} \ge 1/e$, applying (\ref{eq:inv-e}). Thus,
+%These events\ym{These events refers to other nodes trying the same color? MH: No, previously unused vs. tried in the same round} are independent, so 
+with probability at least $\phi/(e \Delta^2) \ge c_1/e$, $v$ becomes colored in that round. Hence, the probability that it is not colored in all $c_0 \log n$ rounds is at most $(1-c_1/e)^{c_0\log n} \le e^{-c_0 c_1/e \log n} \le n^{-c_0 c_1/e} \le n^{-3}$, applying the bound $c_0 \ge 3e/c_1$.
+So, with probability at least $1-1/n^2$, all nodes have leeway at most $c_1 \Delta^2$ after Step 2.
+
+From the contrapositive of Prop.~\ref{P:sparsity} we obtain that the sparsity of $v$ is at most $\zeta \le 4e^3 \phi$, w.h.p.
+\end{proof}
+
+
+\textsc{Lemma \ref{L:h-degree}:} \emph{Let $v$ be a node of sparsity $\zeta$.
+Then,
+\begin{enumerate}
+    \item $v$ has at least $\Delta^2 - 8\zeta/k -4/k$ neighbors in $H_{1-k}$, and
+    \item The number of nodes that are within distance 2 of $v$ in $H$ but are not d2-neighbors of $v$ is
+$|N_{H^2}(v) \setminus N_{G^2(v)}| \le 6\zeta$.
+\end{enumerate}
+}
+ \begin{proof}
+% \begin{proof}[Proof of \Cref{L:h-degree}]
+%\label{L:h-degree}
+\textbf{1}. 
+Let $k' = 1 - k/4$.
+A d2-neighbor of $v$ that is not a $H_{1-k}$-neighbor can share at most $k' \Delta^2$ common d2-neighbors with $v$, by Thm.~\ref{T:similarity}, while $H_{1-k}$-neighbors can share up to $\Delta^2-1$ d2-neighbors with $v$.
+In other words, the d2-neighbors of $v$ can have degree at most 
+$\Delta^2-1$ ($k'\Delta^2$) in $G^2[v]$ if they are $H$-neighbors (non-$H$-neighbors), respectively.
+The number of edges in $G^2[v]$ is then at most
+\[ \frac{1}{2}\left( |N_{H_{1-k}}(v)| \Delta^2 + (\Delta^2 - |N_{H_{1-k}}(v)|) k' \Delta^2\right) = 
+\frac{\Delta^2}{2} \left(k' \Delta^2 + |N_{H_{1-k}}(v)| \frac{k}{4}\right) \ . \]
+By the definition of sparsity, the number of edges in $G^2[v]$ equals $\Delta^2((\Delta^2-1)/2 - \zeta)$.
+Combining the two bounds, 
+\[ |N_{H_{1-k}}(v)| \frac{k}{4} \ge \Delta^2 - 1 - 2\zeta - k'\Delta^2 
+  = \Delta^2 \frac{k}{4}  - 1 - 2\zeta \]
+Namely, the number of $H_{1-k}$-neighbors of $v$ is bounded below by $\Delta^2 - 8\zeta/k -4/k$.
+
+%\label{L:h2}
+\textbf{2}. By sparsity, there are $\nicefrac{1}{2}\, \Delta^2(\Delta^2 - 2\zeta)$ edges within $G^2[v]$. Thus, there are at most $2\zeta \Delta^2$ edges of $H$ that have exactly one endpoint in $N_{G^2}(v)$. Nodes in $N_{H^2}(v)$ share at least $\Delta^2 - \Delta^2/3 - \Delta^2/3 = \Delta^2/3$ d2-neighbors with $v$. Thus, there are at most $6\zeta$ nodes in $H^2[v]$ that are not in $G^2[v]$.
+\end{proof}
+
+\textsc{Lemma \ref{L:H-neighbors}:} \emph{Let $v$ be a solid node.
+Then,
+\begin{enumerate} 
+  \item $v$ has at least $\Delta^2/2$ $H'$-neighbors.
+  \item Every $\hat{H}$-neighbor of $v$ has at least $\Delta^2/3$ $H$-neighbors.
+  \item The degree sum in $N_{H'}(v)$ is bounded below by
+      \[ \sum_{u \in N_{H'}(v)} deg_H(u) \ge |N_{H'}(v)| (\Delta^2 - c_8\phi), \]
+     for constant $c_8 \le 4000$.
+\end{enumerate}}
+\begin{proof}
+%\begin{proof}[Proof of \Cref{L:H-neighbors}]
+\textbf{1}. Let $\zeta$ be the sparsity of $v$ and $\phi$ be its leeway, which satisfy $\phi \le c_1 \Delta^2$ and $\zeta \le 4e^3\phi$, since $v$ is solid.
+By Lemma \ref{L:h-degree}(1), $v$ has at least $\Delta^2 - 48\zeta - 24 \ge \Delta^2 - 50\zeta$ neighbors in $\hat{H}$, where $\zeta$ is the sparsity of $v$. At most $\phi$ of those nodes have more than one 2-path to $v$, since $v$'s slack is at most $\phi$. Hence, it has at least $\Delta^2 - 50\zeta - \phi \ge \Delta^2(1 - 201 e^3 c_1) \ge \Delta^2/2$ $\hat{H}$-neighbors with a single 2-path to $v$, using that $c_1 \le 1/(402 e^3)$.
+
+\textbf{2}. 
+Let $v$ be a solid node and $u$ a node in $\hat{H}[v]$. Let $X$ be the set of nodes in $G^2[v]$ that share at least $2\Delta^2/3$ d2-neighbors of $G^2[v]$ with $u$, and let $Y$ be the set of d2-neighbors of $u$ in $G^2[v]$.
+We want to show that $|X \cap Y| \ge \Delta^2/3$.
+
+Since a node in $\hat{H}[v]$ shares at least $5\Delta^2/6$ d2-neighbors with $v$, any pair of nodes in $\hat{H}[v]$ share at least $\Delta^2 - 2\Delta^2/6 = 2\Delta^2/3$ d2-neighbors in $G^2[v]$. Namely, $|X| \ge |N_{\hat{H}}(v)|$, and by Lemma \ref{L:H-neighbors}(1), $|N_{\hat{H}}(v)| \ge \Delta^2/2$. 
+Since $u$ is in $\hat{H}[v]$, $|Y| \ge 5\Delta^2/6$.
+Thus, $|X \cap Y| \ge |X| - |N_{G^2}(v)\setminus Y| \ge \Delta^2/2 - (1-5/6)\Delta^2 = \Delta^2/3$.
+
+\textbf{3}. 
+Since $v$ is solid, it has sparsity $\zeta \le 4e^3 \phi$. Thus, $G^2[v]$ contains $\binom{\Delta^2}{2} - \zeta \Delta^2$ edges. 
+By Lemma \ref{L:h-degree}(1), $v$ has degree $\Delta^2 - 48\zeta - 24$ in $\hat{H}$. The at most 
+$48\zeta+24$ nodes in $N_{G^2}(v) \setminus N_{\hat{H}}(v)$ have degree sum at most $(48\zeta+24) \Delta^2$. Thus, the number of edges in $\hat{H}[v]$ is at least  
+$\binom{\Delta^2}{2} - (49\zeta +24)\Delta^2 \ge \binom{\Delta^2}{2} - (196e^3\phi+24)\Delta^2$.
+%There are at least $\binom{\Delta^2}{2} - O(\phi)\Delta^2$ edges in $\hat{H}[v]$.\footnote{MMH: This remains to be argued.} 
+Recall that at most $\phi$ nodes in $N_{\hat{H}}(v)$ can have multiple paths to $v$. 
+Then, $H'[v]$ has at most $\phi \Delta^2$ fewer edges than $\hat{H}[v]$, which is still at least $\binom{\Delta^2}{2} - c_8\phi\Delta^2$, for $c_8 = 196e^3+2 \le 4000$. A pair of nodes in $H'[v]$ have at least $2\Delta^2/3$ d2-neighbors of $v$ in common, since they each have at least $5\Delta^2/6$ d2-neighbors in common with $v$. Thus each edge in $H'[v]$ connects $H$-neighbors. In other words, nodes in $H'[v]$ have $\Delta^2 - c_8 \cdot \phi$ $H$-neighbors, on average.
+%\[ \sum_{u \in N_{H'}(v)} deg_H(u) \ge |N_{H'}(v)| (\Delta^2 - c_8\phi)\ , \]
+\end{proof}
+
+\subsection{Deferred Proof of Section \ref{ssec:correctness}}
+\label{app:correctness}
+
+ \textsc{Lemma \ref{L:survival}}: \emph{Let $v$ be an active live node. 
+Any given query sent from $v$ towards a node $w$ via a node $u\in H'\subseteq \hat{H}[v]$ survives with constant probability at least $c_6 \ge 1/7$, independent of the path that the query takes.}
+
+\begin{proof}
+We fix a particular query $Q$ that has been generated and we use the following notation for nodes on its way (in the case the query does not get dropped) $v-u'-u-w'-w$.
+% The query can be dropped only at the following stages: after both rounds of Step 1, first round of Step 2, or second round of Step 4.
+For the intermediate nodes $u'$ and $w'$, queries are only dropped if they are to continue towards the same next destination (i.e., to the same $u$ or $w$). We will account for their dismissal there. Namely, we have $v$  assign each query a random priority, and $u$ retains the received query with the highest priority. A drop at $u'$ is therefore also a drop at $u$.
+
+At the remaining nodes, $u$ and $w$, we bound the expected number of queries arriving -- other than $Q$ -- from above by some constant $c$. By Markov inequality, the number of other queries received is then at most $2c$, with probability at least $1/2$. The probability of surviving the culling with $2c$ other competitors is $1/(2c+1)$. 
+Thus, with probability at least $1/(2(2c+1))$, the query $Q$ survives this stage.
+
+%\textit{Being dropped at $u'$:} After the first round, $Q$ lands at an intermediate node $u'$. $u'$ has at most $\phi$ immediate live neighbors, by the algorithm precondition on the leeway of $v$. Of these, expected $\tau/(8\phi)$ are active, and the active ones send a query with probability $1/\tau$.
+%Thus, $u'$ receives expected at most $1/8$ other queries. The probability that $Q$ is the only query arriving at $u'$ is at least $7/8$.
+
+\textit{Being dropped at $u$:} After the second round, the node $u$ has at most $(24e^3+1)\phi$ live $H$-neighbors, since $v$ has at most $\phi$ live d2-neighbors and by Lemma \ref{L:h-degree}(2) and Obs.~\ref{O:sparse}, 
+there are at most $24e^3\phi$ live nodes that are $H^2$-neighbors of $v$ but not $G^2$-neighbors of $v$. $u$ receives a query from each with probability $1/(6000\phi)$, for an expected at most $(24e^3+1)\phi/(6000\phi) \le 1/12$ queries.
+
+A query can also be dropped in Step 2 if it arrives at a node in $\hat{H}[v] \setminus H'$, but the lemma is conditioned on queries sent towards nodes in $H'$, i.e., $u\in H'$. 
+
+% \textit{Being dropped at $w'$:} This only occurs if it is sent towards the same $w$, so we deal with it there. \ym{Missing MH: Check}
+
+\textit{Being dropped at $w$:} Finally, we consider a node $w$ at the end of round 2 of Step 4. $w$ has at most $\Delta^2$ $H$-neighbors. Each of its $H$-neighbors with a live $\hat{H}$-neighbor has $H$-degree at least $\Delta^2/3$ by Lemma \ref{L:H-neighbors}(2), 
+and has expected at most $1/12$ query to send to a random $H$-neighbor. 
+%and has at most one query to send to a random $H$-neighbor. 
+Hence, the expected number of other queries that $w$ receives is at most $3/12=1/4$. 
+
+\textit{Combined probability of being dropped:} The probability of survival is at least $c_6 \ge 1/(2(1/6+1)) \cdot 1/(2(1/2+1)) \cdot = 3/21 = 1/7$.
+%\ge 1/22 \cdot 1/14 = 1/308$.
+%\[c_6 \ge \frac{1}{22}\cdot \frac{1}{14} \ .  \]
+% \frac{7}{8} \cdot \frac{1}{10} \cdot 
+\end{proof}
+
+ \textsc{Lemma \ref{L:proposal-expected}}: \emph{ 
+ An active live node receives at most one proposal in expectation. This holds even in the setting where no queries are dropped. }
+ \begin{proof}
+  Let $P_v$ be the set of nodes that are $H$-neighbors of $H'$-neighbors of $v$ but are not d2-neighbors of $v$. These are the only nodes that generate proposals for $v$ in Step 5. Each $H'$-neighbor $u$ of $v$ receives a query from $v$ with probability $1/(6000\phi)$ and sends it to a random $H$-neighbor. $u$ has at least $\Delta^2/3$ $H$-neighbors by Lemma \ref{L:H-neighbors}(2). Thus, the probability that a given node in $P_v$ receives a query involving $v$ in Step 5 is at most $1/(6000\phi) \cdot \Delta^2 \cdot 3/\Delta^2 = 3/(6000\phi)$. By Lemma \ref{L:h-degree}(2) and Obs.~\ref{O:sparse}, $P_v$ contains at most $24 e^3 \phi$ nodes. Hence, the expected number of proposals $v$ receives from Step 5 is $24 e^3\phi \cdot 3/(6000\phi) = 72e^3/6000 \le 1/4$.
+
+We next bound the expected number of proposals due to Step 3.
+The probability $p_u$ that a given $H'$-neighbor $u$ of $v$ picks a color that is not used among its $H$-neighbors, over the random color choices, is 
+%\[p_u = (\Delta^2 - deg_{H}(u))/deg_{H}(u) \ge 3(1 - deg_H(u)/\Delta^2) \]
+\[p_u = (\Delta^2 - deg_{H}(u))/deg_{H}(u) \ge 3(1 - deg_H(u)/\Delta^2)\ , \] 
+where we used Lemma \ref{L:h-degree}(2) in the inequality.
+The probability that a random query from $v$ leads to a color proposal is then 
+  \[ \frac{\sum_{u \in H'[v]} p_u}{|N_{H'}(v)|} \ge \frac{1}{|N_{H'}(v)|\Delta^2} \sum_{u \in H'[v]} 3 \left(\Delta^2 - deg_H(u)\right) \ge  \frac{c_8 \phi}{|N_{H'}(v)|}\ ,  \]  
+applying Lemma \ref{L:h-degree}(3). The expected number of queries sent from $v$ to $H'$-neighbors to $N_{H'}$ is $|N_{H'}(v)|/(6000\phi)$, so the expected number of proposals that $v$ receives is $c_8/6000 \le 2/3$.
+\end{proof}
+
+\textsc{Lemma \ref{L:proposal-tried}.} \emph{Let $v$ be an active live node.
+  Conditioned on the event that a particular color is proposed to $v$, the probability that $v$ \emph{tries} the color is at least $c_9 \ge 1/6$.}
+%  The probability that a given color proposal is tried (in Step 6) is at least $c_9 \ge 1/6$.\ym{Not clear from the statement what given means. Write as in the prove. Conditioned on being proposed..}
+\begin{proof}
+By Lemma \ref{L:proposal-expected}, $v$ receives at most one proposal in expectation.
+By Markov's inequality, $v$ receives at most two proposals, with probability at least $1/2$. Let $m$ be a specific proposal. 
+Conditioned on $m$ being proposed, $v$ receives at most three proposals, with probability at least $1/2$. Hence, with probability at least $1/6$, $m$ will be the proposal selected to be tried.
+\end{proof}
+
+
+\subsection{Deferred Proof of Section \ref{ssec:improved}}
+\label{app:improved}
+
+\textsc{Theorem \ref{T:learnpalette}:} 
+\emph{The time complexity of \alg{LearnPalette}($\varphi$) with $\varphi=O(\log n)$ is $O(\log n)$, when $\Delta = \Omega(\log n)$.}
+%
+\begin{proof}
+Each live node has $\Omega(\Delta^2)$ neighbors and selects $Z$ of them uniformly to become handling nodes. Thus, each node has probability $O(Z/\Delta^2)$ of becoming a handling node for a given live d2-neighbor, and since it has $O(\varphi)$ live d2-neighbors (by the precondition), it becomes a handling node for an expected $O(\varphi \cdot Z/\Delta^2)$ live nodes. 
+%\footnote{Here we use a weaker form of the precondition}
+\begin{itemize}
+\item The flooding in Step 2 takes as many rounds as there are live nodes in a immediate neighborhood, which is $O(\varphi)$.
+\item In Step 3 involves sending a single message to each handling node (of each live node), which is easily done in $O(1)$ expected time, or $O(\log n)$ time, w.h.p.
+\item In Step 4, each node forwards expected $P/\Delta$ messages from each handling immediate neighbor, and it has $O(Z\varphi/\Delta)$ such immediate neighbors. 
+Thus, it sends out $O(P Z\varphi/\Delta^2)$ messages to random neighbors, or $O(P Z \varphi/\Delta^3)$ message per outgoing edge, w.h.p. This takes time $O(PZ \varphi/\Delta^3)$. 
+\item In Step 5, a colored node needs to forward its color to the handling node $z_v^i$ of each of its $O(\varphi)$ live d2-neighbors. Since it is sent along $\Delta^2/P \log n$ paths, and due to the conductance,  w.h.p., the color reaches a node in $Z_v^i$ (the set of nodes informed of $z_v^i$). 
+
+The path from a colored node $u$ to a handler $z_v^i$ for a live node has two parts: the path $p_{u,w}$ from $u$ to an node $w$ that knows the path to $z_v^i$, and path $q_{w,z_v^i}$ from $w$ to $z_v^i$. 
+A given node $a$ has probability $1/\Delta^2$ of being an endpoint of a given path $p_{u,w}$ (from a d2-neighbor); there are $O(\varphi)$ live d2-neighbors (by the precondition, weaker form), $\Delta^2$ colored d2-neighbors, and $\Delta^2/P \log n$ copies of messages sent about each. Thus, a given node has expected 
+\[ O(\varphi \cdot \Delta^2 \cdot \Delta^2/P \log n \cdot 1/\Delta^2) = O(\varphi/P \cdot \Delta^2 \log n) \] 
+random paths going to it.
+Similar argument holds for a node being an intermediate node on a path $p_{u,w}$: the number of immediate neighbors goes to $\Delta$, while the probability of being a middle point on the path goes to $1/\Delta$, resulting in the same bound.
+Thus, the load on each edge is $O(\Delta \varphi/P \log n)$. 
+
+For the $q$-paths, the main congestion is going into the handler. Observe that there are only $O(\log n)$ $p$-paths that reach an informed node $w$. Hence, the number of paths going into a given handler is the product of the size of the block, times $\log n$: $\Delta^2/Z \cdot \log n)$. So, the load on an incoming edge into a handler is $O(\Delta/Z \log n)$, w.h.p. (when $Z = O(\Delta)$).
+
+\item The pipelining of Steps 6-7 takes $O(|T_v|)$ rounds, and by Lemma \ref{l:last}, $|T_v| = O(\log n)$, w.h.p. 
+
+\end{itemize}
+
+To summarize, the dominant terms of the time complexity are $O(\log n)$ (Steps 2, 6-7), $O(PZ\varphi/\Delta^3) = O(PZ (\log n)/\Delta^3)$ (Step 4), $O(\Delta\varphi/P \log n) = O(\Delta(\log n)^2/P)$ (first half of Step 5), and $O(\Delta/Z \log n)$ (second half of Step 5).
+
+Optimizing, we set $Z = \Delta$ and $P = \Delta \sqrt{\Delta\log n}$, 
+for time complexity of $O(\log n (1 + \sqrt{(\log n)/\Delta}))$, which is $O(\log n)$ when $\Delta = \Omega(\log n)$. 
+\end{proof}

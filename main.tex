@@ -1,0 +1,119 @@
+\documentclass[12pt,a4]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb} 
+\usepackage{thmtools} 
+\usepackage{thm-restate}
+\usepackage{xcolor,xspace}
+\usepackage{nicefrac}
+% \usepackage{enumitem}  % Seems to conflict with tikz (!?)
+ \usepackage{enumerate}  % Superseded by enumitem
+
+\usepackage{algpseudocode}
+    \usepackage{algorithm}
+    
+     \usepackage{tikz}
+    \tikzset{>=latex}  % arrow style
+    \usetikzlibrary{positioning,chains,fit,shapes,shapes.multipart,calc,topaths,decorations.pathreplacing,backgrounds}
+    \newcommand{\tikzmark}[1]{\tikz[overlay,remember picture] \node (#1) {};}
+    \newcommand*{\AddNote}[4]{%
+	\begin{tikzpicture}[overlay, remember picture]
+	    \draw [decoration={brace,amplitude=0.5em},decorate,ultra thick,blue]
+		($(#3)!(#1.north)!($(#3)-(0,1)$)$) --  
+		($(#3)!(#2.south)!($(#3)-(0,1)$)$)
+		    node [align=center, text width=2.5cm, pos=0.5, anchor=west] {#4};
+	\end{tikzpicture}
+    }%
+    
+        % ------------------- algorithm command -------------------
+    % comments in algorithmix
+    \newcommand{\comment}[1]{\texttt{// #1}}
+
+
+\newcommand{\mypar}[1]{\smallskip\noindent\textbf{#1}. }
+
+\usepackage{hyperref}
+\usepackage[nameinlink,capitalize]{cleveref}
+
+
+% Proofs
+%\newenvironment{proof}{\noindent {\em Proof}.\ }{\proofbox\par\smallskip\par}
+\newcommand{\proofbox}{\hspace*{\fill}\mbox{$\halmos$}}
+\newcommand{\halmos}{\rule{1ex}{1.4ex}}
+\newcommand{\ym}[1]{\textcolor[rgb]{1,0,0}{Yannic: #1}}
+\newcommand{\mh}[1]{\textcolor[rgb]{0,0,1}{Magnus: #1}}
+\newcommand{\fk}[1]{\textcolor[rgb]{0,0.7,0}{Fabian: #1}}
+
+%% Sizes
+ \setlength{\topmargin}{-0.5cm} \setlength{\topskip}{0cm}
+ \setlength{\footskip}{1cm} \setlength{\headsep}{0cm}
+ \setlength{\headheight}{0cm} \setlength{\oddsidemargin}{0.25cm}
+ \setlength{\evensidemargin}{0.25cm} \setlength{\textwidth}{16cm}
+ \setlength{\textheight}{24cm} \setlength{\parindent}{0.5cm}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{observation}[theorem]{Observation}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem*{remark}{Remark}
+
+\newcommand{\alg}[1]{\textsc{#1}}
+\newcommand{\eps}{\ensuremath{\epsilon}}
+\newcommand{\bigO}[1]{\ensuremath{O\left(#1\right)}}
+\newcommand{\logstar}{\ensuremath{\log^*}}
+\newcommand{\myfrac}[2]{\nicefrac{#1}{#2}\,}
+\newcommand{\CONGEST}{\ensuremath{\mathsf{CONGEST}}\xspace}
+\newcommand{\LOCAL}{\ensuremath{\mathsf{LOCAL}}\xspace}
+\newcommand{\set}[1]{\left\{#1\right\}}
+%\newcommand{\congest}{\textsc{Congest}}
+\newcommand{\congest}{\CONGEST}
+
+\DeclareMathOperator*{\E}{\mathbb{E}}
+\DeclareMathOperator{\polylog}{polylog}
+\DeclareMathOperator{\poly}{poly}
+\DeclareMathOperator{\argmin}{argmin}
+\DeclareMathOperator{\ID}{ID}
+
+\newcommand{\todo}[1]{\footnote{#1}}
+
+
+\title{Distance-2 Coloring in {\congest}}
+\author{}
+%\author{Magn\'us M. Halld\'orsson\thanks{ICE-TCS \& Department of Computer Science, Reykjavik University, Iceland. Partially supported by Icelandic Research Fund grant 174484-051.}  \and Fabian Kuhn \and Yannic Maus\footnote{Supported by the European Union's Horizon 2020 Research And  Innovation Programme under grant agreement no. 755839.}}
+
+  
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+\input{intro}
+\input{prelim}
+\input{rand}
+\clearpage
+
+\input{deterministic}
+\input{detDeltaSummary}
+\bibliographystyle{abbrv}
+\bibliography{refs}
+\clearpage
+\appendix
+\input{deterministicDelta}
+\input{appRand}
+\input{appDet}
+
+
+\end{document}
+
+\clearpage
+\input{rest}
+
+
+
+\end{document}
+

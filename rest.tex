@@ -1,0 +1,90 @@
+%%% Stuff that won't go into PODC submission
+\section{Hopefully added into PODC submission}
+
+
+\paragraph{Estimating degree} The first task is for each node to estimate the value $deg_v(G^2)$. To that end, we modify the random sampling procedure.
+
+Each node picks a random value $x_v$ in $[\Delta^2]$ and sends to its immmediate neighbors. Each node then forwards the $f(n) = \omega(1) \log n$ smallest received values and the corresponding node IDs. Each node aggregates the lists received from its immediate neighbors, eliminating repeated entries, producing the list $S_v$.
+Let $S'_v \subseteq S_v$ be the subset with the $f(n)$ smallest values and let $t_v = \max \{x_u \in S'_v\}$. 
+Then $D_v$ is the smallest value $D'$ such that $t_v \ge f(n) \cdot D / D'$.
+
+We want to claim that we can attain a $1+o(1)$-approximation of the true degree $d_{G^2}(v)$ of each node.
+
+\section{Extensions : Probably not by PODC deadline}
+% \end{document}
+
+\subsection{Further improvement in time complexity}
+
+We can reduce the size of each message transmitted to $O(\log \Delta)$. Then, if $\log d \ll \log n$, the multiple messages can be packed into a single {\congest} message. Since the iterations of \alg{Reduce} are independent, this reduces its time complexity to $O((\phi/\tau)\log n / \log \Delta)$. The time complexity of \alg{d2-Color} is then reduces to $O(\log^2 d + \log n)$. 
+
+To reduce the message size, each node picks an random $6\log \Delta$-bit label, as a reduced identifier. After broadcasting this one hop, each intermediate node checks that all its intermediate neighbors have received different IDs. If not, that node picks another random ID. This process completes in $O(\log n)$ rounds, where all nodes have different IDs from their d2-neighbors. The message sizes are then of size $O(\log \Delta)$.
+
+\subsection{Distance-$k$ coloring}
+%\paragraph{Distance-$k$ coloring}
+
+The algorithm can probably be extended to distance-$k$ coloring, with time complexity $O(\Delta^{\lceil k/2\rceil} \log^2 n)$. 
+At least for even $k$, a factor of $\Delta^{\lceil k/2\rceil}$ is necessary just to verify if a proposed color on a single vertex is valid.
+
+
+\subsection{$\Delta^2(G^2)+1$-coloring }
+
+We should be able to handle two extensions, partially.
+One: $\Delta^2(G^2)$ can be much smaller than $\Delta^2(G)$. Second: It is better if the nodes do not need to know $\Delta^2$ in advance.
+To that end, we describe here a procedure to estimate the local maximum degree.
+
+
+\subsection{Open Questions}
+This will not achieved by PODC deadline
+
+\paragraph{Algorithmic Extensions}
+\begin{enumerate}
+    \item Color each node $v$ with color at most $deg_{G^2}(v)+1$. (For this, we need to generalize the sparsity lemma).
+    \item $\Delta^2+1$-choosability
+    \item Other interesting problems on $G^2$? (Strong edge coloring?)
+\end{enumerate}
+\paragraph{Lower bounds}
+\begin{enumerate}
+    \item Show that Precoloring Extension requires $\Omega(\Delta^2)$ rounds, by reduction to multi-party communication complexity (Done by Alexandre Nolin)
+    \item Show that $\Omega(\log n)$ rounds are needed for d2-coloring
+    \item Show that $\Omega(\Delta^2)$ rounds are needed for d3-coloring
+\end{enumerate}
+
+%\subsection{Approaches to the extensions}
+
+%\end{document}
+
+%%% Additional material
+
+\subsection{Discussion: Node-Bandwidth-Constrained Distributed Model}
+\label{sec:cap}
+
+Coloring $G^2$ suggests a distributed model where communication with neighbors is restricted. Though {\congest} restricts communication, it still allows a node to communicate with \emph{all} its neighbors simultaneously.
+Broadcast {\congest} limits a node to transmit only a single message in a round, but it can receive different messages from all its neighbors.
+
+% 
+We can envision a communication model with intermediate relays connecting the process nodes of the networks. All communication must go through the relays, which themselves are constrained to $O(\log n)$-bit message per link. 
+
+This could be generalized, where a relay connects a given node only to a subset of the nodes connected to the relay.
+The case of relay for each edge corresponds to the basic {\congest} model. The case of a single relay can be viewed as a restriction of the broadcast-{\congest} model, where a node receives only a single value that can be an arbitrary function (returning $O(\log n)$ bits) of the values sent to it by its neighbors.
+
+% Pre-coloring extension: provably hard, even for a single node
+One problem that appears provably difficult in this setting, but is easy in the ordinary {\congest} model, is to extend a partial $\Delta^2+1$-coloring to a full coloring. 
+%Even if only a single node is uncolored, it requires $\Theta(\Delta)$ rounds to identify a valid color, as can be proven by a simple reduction to 2-player communication complexity. 
+The \emph{Precoloring Extension} problem, some of the nodes of the graph are already colored (with the palette of $\Delta^2+1$ colors) and the task is to extend it to a valid coloring of the whole graph.
+\begin{theorem}
+Precoloring Extension requires $\Omega(\Delta^2)$ rounds, even for a single uncolored node.
+\end{theorem}
+
+\iffalse
+\begin{proof}
+Suppose there is one uncolored node that is a cut node of the graph, dividing the graph into two parts. 
+Let $X$ ($Y$) be the set of colors of the d2-neighbors of the cut node on one (the other) side.
+Give to Alice
+Give to Alice (Bob) the colors of the neighbors of the cut node on one (the other) side, respectively.
+Determining a valid color for the cut node is now equivalent to determining a color 
+\end{proof}
+\fi
+This implies that a strategy involving network decompositions will not lead to efficient algorithms for $O(\Delta^2)$-coloring.
+
+
+On the other hand, it is still easy to check if a given coloring is valid. One can easily compute $\sum_{w \in N(v)} d(v)$, but not the exact degree in $G^2$. 

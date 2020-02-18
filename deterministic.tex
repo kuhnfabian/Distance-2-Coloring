@@ -1,0 +1,107 @@
+\section{Deterministic $G^2$-Coloring}
+\label{S:det-diam}
+Completely independent of the rest of this section we use \Cref{ssec:sumDeltaDeta} to summarize our results on efficient deterministic algorithms when the dependence on $n$ is limited, i.e., algorithms with a runtime of $O(f(\Delta)+\logstar n)$. 
+The goal of the current section is to color the square $G^2$ of the network graph graph $G$ with $(1+\eps)\Delta^2$ colors in polylogarithmic time for some $\eps>0$ and some globally known upper bound $\Delta$ on the maximum degree of the graph $G$. 
+
+\paragraph{Coloring $G$ with $(1+\eps)\Delta$ colors in $\polylog n$ rounds:} If we were to compute a $(1+\eps)\Delta$ coloring of $G$ instead of $G^2$, we could recursively split $G$ into two graphs with roughly half the maximum degree. If we could halve the maximum degree precisely enough such that after $h=O(\log \Delta)$ recursion levels, we would have $p_h=2^h$ graphs each with maximum degree $\Delta_h=(1+\eps)2^{-h}\Delta$. We could then simply color each of them in $O(\Delta_h+\logstar n)$ rounds with a distinct color palette with $\Delta_h+1$ colors each (e.g. using the algorithm in \cite{BEG18}) and obtain a $p_h\cdot (\Delta_h+1)\approx(1+\eps)\Delta$ coloring of $G$. In \Cref{ssec:derandSplitting} we show that one can indeed deterministically split the original network graph with the necessary precision efficiently in the {\congest} model, and at the beginning of \Cref{ssec:coloringWithSplitting} we use these to color $G$.  We obtain the deterministic splitting algorithm from derandomizing a simple randomized algorithm with the method of conditional expectation. For more details on the derandomization we refer to \Cref{ssec:derandSplitting}; here, we only want to point out that most care is needed when formally reasoning that vertices can compute certain conditional expectations. When computing splittings of the original network graph $G$,
+%the conditional expectation that a node $v$ needs to compute
+this only depends on information that $v$ can easily learn, e.g., because it is contained in $v$'s immediate neighborhood. 
+
+
+\paragraph{Coloring $G^2$ with $(1+\eps)\Delta^2$ colors in $\polylog n$ rounds:} To color $G^2$ instead of $G$ we would like  to mimic the same approach. However, now the respective conditional expectations depends on information in the $2$-hop neighborhood of a node and in most graphs vertices cannot learn this information efficiently. Instead we proceed as follows: We split $G$ into $p=2^h$ graphs $G_1,G_2,\ldots,G_p$ of maximum degree $\Delta_h=(1+\eps/4)2^{-h}\Delta$. Then, for each $i=1,\ldots, p$ we consider the subgraph $H_i$ of $G^2$ that is induced by the vertices $V(G_i)$ of $G_i$. As $G_i$ has maximum degree $\Delta_h$ we obtain that $H_i$ has maximum degree $\Delta\cdot \Delta_h$ and furthermore we show that the graphs $H_1,\ldots, H_p$ are such that any {\congest} algorithm on each of the subgraphs can be executed in $G$ in parallel with a multiplicative $\Delta_h$ overhead in the runtime---this step needs additional care and a more involved definition of the splitting problem that we call \emph{local refinement splitting}. 
+Then we use this property to apply the algorithm mentioned in the previous paragraph to color each $H_i$ in parallel with $(1+\eps/4)\Delta\cdot\Delta_h$ colors using a distinct color palette. The induced coloring is a coloring of $G^2$ with $(1+\eps)\Delta^2$ colors.
+
+\smallskip
+We now formally define the splitting problem that we need to solve. 
+\begin{restatable}[Local Refinement Splitting]{definition}{refinementSplitting}
+%\begin{definition}[Local Refinement Splitting]
+Let $G=(V,E)$ be a graph whose vertices are partitioned into $p\leq n$ groups $V_1,\ldots, V_p$, let $\lambda>0$ be a parameter and for $v\in V$ let $deg_i(v)$ be the number of neighbors of $v$ in $V_i$. An (improper) $2$-coloring of the vertices of $G$ with two colors (red/blue) is called a $\lambda$-local refinement splitting if each vertex $v$ with $deg_i(v)\geq 12\log n/\lambda^2$ has at most $(1+\lambda) \deg_i(v)/2$ neighbors of each color in set $V_i$ for all $i=1,\ldots,p$. 
+\end{restatable}
+
+One can show that the local refinement splitting problem is solved w.h.p. if each vertex picks one of the two colors uniformly at random and one can show that this holds even if nodes only use random coins with limited independence. We obtain the following result by derandomizing this zero-round algorithm with the help of a suitable network decomposition of $G^2$ which can computed efficiently with the results in \cite{RG19}.  
+\begin{restatable}[Deterministic Local Refinement Splitting]{theorem}{derandRefinementSplitting}
+\label{lem:derandSplitting}
+For any $\lambda>0$ there is a $O(\log^8 n)$ round deterministic {\congest} algorithm to compute a $\lambda$-local refinement splitting.
+\end{restatable}
+Due to its length the formal proof of \Cref{lem:derandSplitting} (including the aforementioned claim about the randomized algorithm with limited independence) is deferred to  \Cref{app:localRefinementSplitting}. 
+
+%\subsection{Efficient d2-Coloring with $(1+\eps)\Delta^2$ Colors}
+%\label{ssec:coloringWithSplitting}
+We now show how to use \Cref{lem:derandSplitting} to recursively split the graph deterministically into graphs with smaller maximum degree and further any vertex has a small number of neighbors in each such subgraph. Then, in \Cref{thm:coloringWithSplitting}, we use the former property of this partitioning result to compute a $(1+\eps)\Delta$ coloring of $G$ and in \Cref{thm:G2withSplitting} we use both properties to compute a $(1+\eps)\Delta^2$ coloring of $G^2$. 
+\begin{lemma}
+\label{lem:multiPhaseSplitting}
+For any $\eps>0$ there is a $O(\log^8 n)$-round deterministic {\congest} algorithm to partition a graph into $p=2^h$ parts $V_1,\ldots, V_p$ such that every vertex $v\in V$ has at most 
+$\Delta_h=(1+\eps)2^{-h}\Delta=O(\eps^{-2}\log^3 n)$
+ neighbors in each $V_i$ where $h$ is the smallest integer such that $(1+\eps/(10\log \Delta))^h2^{-h}\Delta\leq 1200\eps^{-2} \log^3 n$ holds.
+\end{lemma}
+\begin{proof}
+Let $\eps'=\min\{1,\eps/4\}$ and let $h=O(\log \Delta)$ be the smallest integer such that \begin{align}
+(1+\eps/(10\log \Delta))^h2^{-h}\Delta\leq 1200\eps^{-2} \log^3 n~.
+\end{align}
+
+Then recursively apply \Cref{lem:derandSplitting} with $\lambda=\eps'/(10\log \Delta))$ where we begin with the trivial partition $V_1=V$ and with each recursion level each part of the partition is naturally split into two parts according to the two colors of the local refinement splitting. The \emph{output partition} of recursion level $i$ serves as the \emph{input partition} for recursion level $i+1$. 
+ Due to the choice of $h$ we have that the guaranteed maximum degree $\Delta_i=(1+\lambda)^h2^{-h}\Delta$ after recursion level $i< h$ is at least at least $12\log n /\lambda^{2}$ and thus it decreases by a $(1+\lambda)2^{-1}$ factor with each iteration, that is, after iteration $h$ we have $p=2^h$ subgraphs $G_1,\ldots,G_p$, each with maximum degree at most  
+\begin{align}
+(1+\eps/(10\log \Delta))^h2^{-h}\Delta & \stackrel{(*)}{\leq} e^{\eps/(10\log \Delta)\cdot h}2^{-h}\Delta\leq e^{\eps/10}2^{-h}\Delta\\
+& \stackrel{(**)}{\leq} (1+\eps/5)2^{-h}\Delta\leq (1+\eps)2^{-h}\Delta=\Delta_h~.
+\end{align}
+At $(*)$ we used that $(1+x)\leq e^x$ and $(**)$ we used $e^x\leq 1+2x$ for $0\leq x\leq 1$. 
+Further, with the same calculation---recall that we solve a local refinement splitting in each recursion level---any vertex has at most $(1+\eps)2^{-h}\Delta$ neighbors in each $V_i$. 
+Further, by the definition of $h$, we obtain $\Delta_h=O(\eps^{-2}\log^3 n)$~.
+
+We obtain a runtime of $h\cdot O(\log^8 n)=O(\log^9 n)$ rounds  by $h$ applications of \Cref{lem:derandSplitting}. The runtime in the proof of \Cref{lem:derandSplitting} is dominated by the computation of a so called \emph{network decomposition}. If we reuse the same network decomposition in each call of \Cref{lem:derandSplitting} the runtime can be reduced to $O(\log^8 n)$ rounds. 
+\end{proof}
+We now use \Cref{lem:multiPhaseSplitting} to compute a $(1+\eps)$-coloring of $G$. 
+\begin{theorem}
+\label{thm:coloringWithSplitting}
+For any constant $\eps>0$ there is a deterministic {\congest} algorithm that computes a $(1+\eps)\Delta$ coloring of $G$ in $O(\log^8 n+\eps^{-2}\log^3 n)$ rounds.
+\end{theorem}
+\begin{proof}
+If $\Delta=O(\eps^{-2}\log^3 n)$ use, e.g., the algorithm of \cite{BEG18} to color the graph with the desired number of colors in $O(\eps^{-2}\log^3 n+\logstar n)$ rounds.
+Otherwise, apply \Cref{lem:multiPhaseSplitting} with $\eps'=\eps/2$ to obtain a partition $V_1,\ldots,V_p$ of the vertices where $p=2^h$ (where $h$ is chosen as in \Cref{lem:multiPhaseSplitting}) and the maximum degree of $G[V_i]$ is at most $\Delta_h=(1+\eps/2)2^{-h}\Delta$. 
+Then color each of the subgraphs in parallel (no vertex nor an edge is used in more than one subgraph) with a distinct set of $\Delta_h+1$ colors in $O(\Delta_h+\logstar n)=O(\eps^{-2}\log^3 n)$ rounds using e.g. the algorithm of \cite{BEG18}. The induced coloring is a proper coloring of $G$ as we use disjoint color palettes for distinct subgraphs and the total number of colors is
+\begin{align}
+2^h\cdot (\Delta_h+1) & =2^h\cdot (1+\eps/2)2^{-h}\Delta+2^h\leq (1+\eps/2)\Delta+2^h\leq  (1+\eps)\Delta~.
+\end{align}
+In the very last inequality we used that $h$ is the smallest integer with the aforementioned property from which one can deduce that
+$2^h\leq \eps/2\cdot \Delta$.
+As a runtime we obtain $O(\log^8 n)$ rounds from the application of \Cref{lem:multiPhaseSplitting} and $O(\eps^{-2}\log^3 n)$ rounds from coloring the subgraphs or the whole graph if the maximum degree $\Delta$ is in $O(\eps^{-2}\log^3 n)$ to begin with.
+\end{proof}
+
+To color $G^2$ we first show that a partition obtained by recursively applying a local refinement splitting is helpful to run {\congest} algorithms on the induced  subgraphs of $G^2$ in parallel. 
+\begin{lemma} 
+\label{lem:CONGESTsimulation}
+Let $V_1,\ldots,V_p$ be a partition of the graph such that every vertex $v\in V$ has at most $\Delta'$ $G$-neighbors in $V_i$ for each $i=1,\ldots, p$ and let $A_1, \ldots, A_p$ be algorithms where algorithm $A_i$ runs on $H_i=G^2[V_i]$. 
+Then, we can execute one round of each of the algorithms in parallel in $O(\Delta')$ {\congest} rounds in $G$. 
+\end{lemma}
+\begin{proof}
+We first let all vertices in all $H_i$ send messages to their neighbors that are also neighbors in $G$. 
+Now, if a vertex $v$ needs to send a message to a neighbor $u$ in $H_i$ that is not an immediate neighbor in $G$, that is, $u$ and $v$ are only connected in $G$ through a node $w$, then $v$ sends the message to $w$ and $w$ forwards it to $u$. By the construction of $H_i$ for each $i$ each vertex $v$ of $G$ has at most $\Delta_h$ neighbors that are vertices of $H_i$. Each of these $\Delta_h$ neighbors can have at most $1$ message for any vertex in $N_G(v)\cap V_i$. Thus $v$ has to forward at most $\Delta_h$ messages to a single vertex which it can do in $O(\Delta_h)$ rounds by pipelining. 
+\end{proof}
+With the {\congest} simulation result from \Cref{lem:CONGESTsimulation} we can run \Cref{thm:coloringWithSplitting} on the parts of a partition that we computed \Cref{lem:multiPhaseSplitting} to obtain the main result of this section.
+\smallskip
+
+\textsc{\Cref{thm:G2withSplitting} (Full)}. 
+\emph{For any  $\eps>0$ there is a deterministic {\congest} algorithm that computes a $(1+\eps)\Delta^2$ coloring of $G^2$ in $O(\eps^{-2}\log^{11} n+\eps^{-4}\log n)$ rounds. For constant $\eps>0$ the runtime is $O(\log^{11}n)$.}
+
+\begin{proof}
+Let $\eps'=\min\{1,\eps/4\}$ and apply \Cref{lem:multiPhaseSplitting} with $\eps'$ to obtain  $p=2^h$ subgraphs $G_1,\ldots,G_p$, each with maximum degree at most ($h$ is chosen as in \Cref{lem:multiPhaseSplitting})
+\begin{align}
+\Delta_h=O(\eps^{-2}\log^3 n)~.
+\end{align}
+Then, for $i=1,\ldots,p$ let $H_i$ be the subgraph of $G^2$ that is induced by the vertices $V(G_i)$ of $G_i$. Here each vertex knows which subgraph it belongs to and also which of its immediate neighbors in $G$ belong to which subgraph.
+ As $G_i$ has maximum degree $\Delta_h$ we obtain that $H_i$ has maximum degree $\Delta\cdot \Delta_h$. 
+
+Further any vertex has at most $\Delta_h$ neighbors in any $H_i$ and 
+with \Cref{lem:CONGESTsimulation} we can execute the algorithm from \Cref{thm:coloringWithSplitting} with $\eps'$ in parallel on each subgraph $H_1, \ldots, H_p$ to color each of them with a distinct set of colors with size $(1+\eps')\Delta_h\cdot \Delta$ in time $O(\Delta_h\cdot (\log^8 n+\eps^{-2}\log^3 n))=O(\eps^{-2}\log^{11} n+\eps^{-4}\log^3 n)$.
+The computed coloring forms a coloring of $G^2$ with $2^h\cdot (1+\eps')\Delta_h\cdot \Delta=(1+\eps')\cdot (1+\eps')\Delta^2\leq(1+\eps)\Delta$ colors. 
+\end{proof}
+
+\begin{remark}
+We emphasize that we did not attempt to reduce the $\log n$ factors or to express as many of them as $\log \Delta$ factors as possible. 
+\end{remark}
+
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:
+

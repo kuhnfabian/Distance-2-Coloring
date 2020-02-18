@@ -1,0 +1,22 @@
+\section{Introduction}
+
+We give randomized and deterministic algorithms for the distance-2 coloring in {\congest} model, with tradeoffs between the time complexity and the number of colors used. 
+Distance-2 coloring $G$ is equivalent to coloring the power graph $G^2$, which has the same set of vertices with edges between nodes of distance at most 2 in $G$.
+
+\subsection*{Motivation} The distance-2 coloring  problem is important for several reasons. 
+It is fundamental in wireless networking, where nodes with common neighbors \emph{interfere} with each other. It occurs naturally when single-round randomized algorithms are derandomized using the method of conditional expectation. 
+
+% Strong coloring
+It forms the essential part of \emph{strong coloring} hypergraphs, where nodes contained in the same edge must be colored differently. 
+One natural setting is when the nodes form a bipartite graph, with, say, "task" nodes on one side and "resource" nodes on the other side. We want to color the task nodes so that nodes using the same resource receive different colors.
+
+% Constrained communication model
+We can also view d2-coloring as a way of studying \emph{communication capacity constraints} on nodes, where communication must go through intermediate relays. 
+%(We discuss this further in Sec.~\ref{sec:cap}.)
+
+% Boundary of the efficiently computable
+Finally, d2-coloring in {\congest} is of special interest since it appears to lie at the edge of what is computable efficiently, i.e.\ in polylogarithmic time. Most related/similar problems are either very easy or quite hard. The \emph{distance-$k$ independent set} problem can easily be solved in $O(k\log n)$ time using Luby's algorithm. The distance-3 coloring problem, however, is mostly hard, since it verifying a d2-coloring requires $\Omega(\Delta)$ rounds. The same holds for the \emph{distance-2 edge coloring} problem (or \emph{strong edge coloring}). On the other hand, in the LOCAL model, all these problems are no harder than the distance-1 versions.
+
+
+
+

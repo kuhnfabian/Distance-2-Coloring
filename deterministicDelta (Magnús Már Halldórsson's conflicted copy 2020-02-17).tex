@@ -1,0 +1,133 @@
+\section{Deterministic: $O(\Delta^2+\logstar n)$ rounds}
+\label{sec:g2-coloring}
+
+We give a deterministic algorithm $O(\Delta^2+\logstar n)$-round algorithm for d2-coloring with $\Delta^2+1$ colors. In fact, the algorithm uses at most $\Delta(G^2)$ colors. Before presenting the algorithm, we describe how well-known pre- and post-processing steps can be implemented efficiently.
+
+\paragraph{Refined Analysis of the Linial's Algorithm for $G^2$}
+
+Linial's famous  $O(\logstar n)$ algorithm to compute a $O(\Delta^2)$-coloring of the communication graph $G$ can be implemented in the {\congest} model. In the d2-setting, the algorithm would imply a $O(\Delta^4)$-coloring. A naive implementation in {\congest} (with queuing messages) would implement one round of Linial in $G^2$ in $\Delta$ rounds on $G$ and would yield $O(\Delta\cdot \logstar n)$ rounds. 
+
+We now show that the algorithm can be modified to run in $O(\Delta^2+\logstar n)$ rounds in {\congest}.
+Without going into the details of the algorithm, the key point is that in round $i$ the nodes compute a valid coloring using $O(\log^{(i)} n)$ colors, the $i$-th repeated logarithm. 
+%We expect the reader to be familiar with Linial's algorithm and its standard analysis. 
+\begin{theorem}[Linial's algorithm]
+\label{thm:Liniald2}
+There is a deterministic {\congest} algorithm that d2-colors a graph with $O(\Delta^4)$ colors in $O(\Delta + \log^* n)$  rounds.
+\end{theorem}
+
+\begin{proof}
+We simulate the first two iterations of Linial's method in $2\Delta$ round, by pipelining.
+This reduces the number of colors to $O(\max(\Delta^4, \log\log n))$. 
+If $\Delta^4 \ge \log\log n$, then we are done.
+So, we continue with the case $\Delta^4 \le \log\log n$.
+In each iteration, nodes need to distribute to their neighbors the colors in their neighborhood.
+These are the colors of their $\Delta$ neighbors, each an integer in the range $[1,\ldots, O(\log\log n)]$. This can be encoded in a bitstring of size $\Delta \cdot O(\log\log\log n) = o(\log n)$. Hence, this can be encoded in a single {\congest} message, when $n$ is large enough.
+Hence, the remaining $\log^* n$ iterations of Linial require only $\log^* n$ rounds, for a total round complexity of $2\Delta + \log^* n$.
+\end{proof}
+
+\iffalse %%% Old proof!
+\begin{proof}
+% We now turn to the implementation of Linial's method. 
+Recall that the number of iterations in Linial's method is the smallest value $t$ such that $\log^{(t)} n \le \Delta^2$.
+Thus, if $\Delta^2 = \Omega(\log\log n)$, then $t$ is a constant, and all the applications of Linial's method are completed in $O(t\cdot \Delta)=O(\Delta)$ rounds, by pipelining. 
+
+We focus now on the case that $\Delta^2=O(\log\log n)$.
+Linial's method requires in each iteration information of the colors of its distance-2 neighbors.
+In the $j$-th iteration, these are integers in $[5\Delta^2 \log^{(j-1)} n]$. The number of bits $q_j$ required is then at most $\lceil \log (5\Delta^2 \log^{(j-1)} n) \rceil = O(\log \Delta^2 + \log^{(j)} n)$. 
+In particular, using $\Delta=O(\log \log n)$, after the first few iterations, $q_j = O(\log\log\log n)$, so the total number of bits forwarded is $O(\log^2\log\log n)$, since each node forwards $\Delta^2 \le \log\log\log n$ messages.
+This can be packed into a single {\congest} message, when $n$ is large enough.
+Hence, after the first few iterations (which are implemented in $O(\Delta)$ rounds by pipelining), each iteration is implemented in a single round.
+The total number of rounds needed for all the runs of Linial's algorithm is then $O(\Delta + \log^* n)$.
+\end{proof}
+\fi 
+
+\paragraph{Iterative Color Reduction  for $G^2$}
+Given a $(c+k)$-coloring of $G$ with $c\geq \Delta+1$ we can compute a $c$-coloring of $G$ in $O(k)$ by iteratively recoloring the vertices of the largest color class with a color in $[c]$ that is not used by its already colored neighbors, that is, we use $O(1)$ rounds to remove one color class. 
+%Consider one vertex $v$ that currently has the largest color class. To recolor itself, that is, to pick a color in $[c]$ that is not used by any of its already colored neighbors it has to know all the colors that are used in its neighborhood. We show that a vertex can always update the colors used in its $d2$-neighborhood in $O(1)$-rounds in each step if we have an $O(\Delta)$ round initializing phase. 
+
+
+\begin{theorem}
+\label{thm:delta2_simple_color}
+Given a $(c+k)$-coloring of $G^2$ with $c\geq \Delta(G^2)+1$ and assume that each color can be represented with $O(\log n)$ bits, then we can compute a $c$-coloring of $G^2$ in $O(\Delta+k)$ rounds in {\congest} on $G$. 
+
+In particular, we can compute a $(\Delta(G^2)+1)$-coloring given a $O(\Delta^2)$-coloring in $O(\Delta^2)$ rounds.
+\end{theorem}
+\begin{proof}
+First, in $\Delta$ rounds, each vertex learns all colors in its $d2$-neighborhood. During the algorithm we maintain the invariant that each vertex always knows all used colors in its $d2$-neighborhood. 
+Using this invariant, in one phase, any vertex $v$ that has a color $\alpha>c$ that is larger than any other color in its two hop neighborhood picks a color that is not used by any of its $d2$-neighbors (there is always a free color in the color space of size $\Delta(G^2)+1$ as at most $\Delta(G^2)$ colors can be used by neighbors) and informs its neighbors of its new color pick by broadcasting its new color pick for two hops. All nodes satisfying the requirement perform this recoloring step in parallel. 
+There is no congestion during this broadcasting because after the first hop each node can receive a message from at most one of its neighbors as no vertices of distance two can both take part in the recoloring step in the same phase. The algorithm is iterated for $k$ phases.
+\end{proof}
+
+
+
+
+
+\subsection{Locally Iterative Coloring of $G^2$}
+
+In the following we design a {\congest} algorithm to find a proper $\Delta^2+1$-coloring of $G^2$ in $O(\Delta^2+\logstar n)$ rounds where, as in all previous sections, the communication network is the graph $G$ itself.  Our algorithm is based on the algorithm in \cite{BEG18} and we obtain the following theorem.
+
+\medskip
+\noindent \textbf{\Cref{thm:d2ColoringDelta}.} 
+There exists a deterministic CONGEST algorithm that d2-colors a graph with $\Delta^2+1$ colors in $O(\Delta^2+\logstar n)$ rounds.
+
+\medskip
+
+
+\paragraph{Locally Iterative Coloring Algorithm:} The algorithm consists of three steps. First we compute a $10\Delta^2$-coloring of $G^2$ using the adaption of Linial's algorithm from \Cref{thm:Liniald2}. 
+Then, using its input color each node $v$ computes a sequence $p_v(0),\ldots, p_v(q-1)$ of colors. The sequence is of length $q$ for some $q=O(\Delta^2)$ and  each color in the sequence is an element in the set $\{0,\ldots,q-1\}$. Then, in $q$ phases the vertices try to get colored. In phase $i$ each uncolored vertex $v$ tries to get permanently colored with color $p_v(i)$. Assume that vertex $v$ tries to get permanently colored with color $c$ in some phase; $v$'s try is successful if and only if none of its $d2$-neighbors is already colored with color $c$ or also tries to get color $c$ in phase $i$. This test can be performed in two communication rounds as follows (similar to the color try in \Cref{sec:randAlg}): Each vertex $v$ sends its \emph{candidate color} (or its permanent color if it is colored) for the current phase to its neighbors. Thus each neighbor $w$ of $v$ receives the candidate colors (and permanent colors) of all of its direct neighbors. Node $w$ reports back to $v$ whether $v$'s candidate color is in conflict with any of the candidates (or permanent colors) of $w$'s neighbors (including $w$ itself). Furthermore $w$ can perform this check for all of its neighbors in the same round without any congestion. After the $q$ phases
+we reduce the number of colors to $\Delta(G^2)+1$ in $O(\Delta^2)$ additional rounds by using \Cref{thm:delta2_simple_color}.
+
+
+\medskip 
+The rest of the section is devoted to showing how vertices choose their sequence and why every vertex is colored with a color in $[q]$ after the $q$ phases. 
+We first explain how vertex $v$ defines its sequence assuming that a $10\Delta^4$-coloring $\psi$ of $G^2$ is already given to the nodes. Recall that we compute such a coloring in $O(\Delta+\logstar n)$ rounds with \Cref{thm:Liniald2}. Afterwards we prove that every node is colored at the end of the process.
+To determine their sequences vertices pick a common prime number $q$ with 
+%\begin{align}
+    $4\Delta^2<q<8\Delta^2$~.
+%\end{align}
+Such a prime always exists due to Bertrand's postulate and nodes can locally obtain the prime if they know $\Delta$.\footnote{As the algorithm can also deal with already colored neighbors one can remove the assumption that nodes need to know $\Delta$ with the standard exponential doubling technique. } Then, associate each color in $\psi$ with a distinct polynomial $p: \mathbb{F}_q\rightarrow \mathbb{F}_q$ with coefficients in $ \mathbb{F}_q$ of degree at most $1$ and let $p_v$ be the polynomial associated with $\psi(v)$. Note, that such an assignment is possible as there are $q^2\geq 16\Delta^4\geq 10\Delta^4$ polynomials over $\mathbb{F}_q$ of degree at most $1$.\footnote{One can obtain an explicit mapping, e.g., by setting $p_v(x)=a_v+b_v\cdot x$ with $a_v=\lfloor\psi(v)/q\rfloor$ and $b_v=\psi(v)\mod q$. } 
+%for each $v\in V$ define the following polynomial $p_v$ that only depends on $v$'s color in $\psi$.
+%\begin{align}
+%p_v& : \mathbb{F}_q\rightarrow \mathbb{F}_q, x\mapsto a_v+b_v\cdot x, \text{ where} \\
+%   a_v & =\psi(v) \mod q \in  \mathbb{F}_q\\
+%    b_v & =\lfloor \psi(v)/q\rfloor \in  \mathbb{F}_q
+%\end{align}
+The sequence of $v$ is defined by evaluating $p_v$ at the points of $\mathbb{F}_q$, that is, $v$'s sequence is $p_v(0),\ldots, p_v(q-1)$.
+\medskip 
+
+We call a phase \emph{blocked} for vertex $v$ if any of its $d2$-neighbors tries the same color as $v$ in this phase or some $d2$-neighbor is already colored with the color that $v$ tries in the phase. Thus $v$ is colored with a color in $[q]$ as soon as one phase is not blocked for $v$. We now upper bound the number of blocked phases.
+\begin{lemma}
+\label{lem:blockedPhases}
+ Any vertex $v$ has at most $2\Delta^2$ blocked phases. 
+\end{lemma}
+\begin{proof}
+Let $u$ and $v$ be $d2$-neighbors. As $u$ and $v$ have different colors in $\psi$ they choose distinct polynomials $p_u$ and $p_v$. As $p_u$ and $p_v$ are non-equal polynomials of degree $1$ over a prime field there is at most 1 $i\in \mathbb{F}_q$ with $p_v(i)=p_u(i)$. Thus any $d2$-neighbor $u$ of $v$ can cause at most one blocked phase for $v$ while $u$ is still trying to get colored. Once $u$ is permanently colored with some color $c_u$, we again have $p_v(i)=c_u$ for at most one $i$, as $p_v$ and $c_u$ are both non-equal polynomials of degree at most one; note that $p_v\neq c_u$ because if $p_v$ is a polynomial of degree $1$ it is different from the constant polynomial $c_u$, if $p_v$ is a polynomial of degree $0$, i.e., a constant $c_v$ it is different from $c_u$ as $u$ can only choose $c_u$ if $c_u\neq p_v(i)=c_v$ for some phase $i$.  Thus any $d2$-neighbor $u$ can cause at most one blocked phase after it is permanently colored. 
+
+In total any $d2$-neighbor $u$ can cause at most two blocked phases for $v$ and as there are at most $\Delta^2$ distinct $d2$-neighbors there are at most $2\Delta^2$ blocked phases for $v$.
+\end{proof}
+We can now show that the presented algorithm reduces an $O(\Delta^4)$ coloring to a $O(\Delta^2)$-coloring in $O(\Delta^2)$ rounds. 
+
+\begin{theorem}
+\label{thm:d2ColoringDelta}
+There is a deterministic \congest algorithm that generates a $O(\Delta^2)$-coloring of $G^2$ in time $O(\Delta^2)$ given an $O(\Delta^4)$ coloring of $G^2$.
+\end{theorem}
+
+\begin{proof}[Proof of \Cref{thm:d2ColoringDelta}]
+We first prove that every vertex is colored after the last phase, that the coloring is proper, and that it uses at most $O(\Delta^2)$ colors. 
+A vertex $v$ obtains a final color in the first phase in which $v$ is not blocked. There are at most $2\Delta^2$ blocked phases for a fixed vertex $v$. The total number of phases is $>2\Delta^2$, that is, each vertex has a phase in which it is not blocked and obtains a final color. The coloring is proper as $d2$-neighbors cannot get colored with the same color in the same phase as the color trial is negative in such a round and if one of them got colored before the other the latter one has to choose a different color. The coloring uses at most $q=O(\Delta^2)$ colors as the polynomials are evaluated over $\mathbb{F}_q$. 
+
+The $q$ phases of the locally iterative algorithm need $O(\Delta^2)$ rounds as every color trial can be implemented in $O(1)$ rounds.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:d2ColoringDelta}]
+The runtime of the adapted version of Linial's algorithm is $O(\Delta+\logstar n)$.  and the final color reduction needs another $O(\Delta^2)$ rounds.
+\end{proof}
+
+
+
+
+
+
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

@@ -1,0 +1,751 @@
+
+\section{Randomized Algorithm}
+\label{sec:randAlg}
+We give randomized {\congest} algorithms that form a \emph{distance-2 coloring} (d2-coloring) using $D+1$ colors.
+
+\subsection{Overview of overall algorithm }
+
+Our algorithm has three steps, that are presented and analyzed in the following subsections.
+The main component is a method \alg{Reduce} that roughly speaking reduces the density of live nodes in a neighborhood. The case of low-degree graphs is treated separately by the deterministic algorithm of Section \ref{sec:g2-coloring}.
+
+%% 
+A node $v$ \emph{trying} a color means that it sends the color to all its immediate neighbors, who then report back if they or any of their neighbors was using (or proposing) that color.
+%and have smaller ID than $v$. 
+If all answers are negative, then $v$ adopts the color. A node is \emph{live} until it becomes \emph{colored}.
+
+In what follows, $c_0$, $c_1$ and $c_2$ are constants satisfying $c_0 \le 3e/c_1$, $c_1 \le 1/(402 e^3)$ and $c_2 \ge 48$.
+
+% List of key constants:
+%  c_0 : (d2-color) Determines the number of rounds of initial random tries. Affects initial leeway and sparsity.
+%  c_1 : (d2-color) The initial leeway (times D). Depends on c_0.
+%  c_2 : (Reduce) Probability of sending a message along a given path, as well as a stopping condition: when to switch to log-leeway routine
+%  c_4 : (Similarity) Prob. of entering set S, in similarity graph computation
+%  c_5 : 
+%  c_6 : (Reduce) Selection of uniformly random d2-neighbor
+\begin{quote}
+   \textbf{Algorithm} \emph{d2-Color}
+%    \emph{Precondition}: Each node has at most $\tau/\Delta$ immediate live neighbors \\
+%    \emph{Postcondition}: The graph is properly $D+1$-colored \\
+
+   0. If $\Delta^2 < c_2 \log n$ then \alg{Deterministic-d2Color($G$)}; halt \\
+%   1. Each node picks a random color and keeps it if none of its d2-neighbors picked it. \\
+   1. repeat $c_0 \log n$ times: \hspace{5cm }\textit{// Initial Phase} \\
+%   1. repeat $\Theta(\log n)$ times: \\
+   \hspace*{2em} Each live node picks a random color and \emph{tries} it. \\     
+   2. Form the similarity graphs $H=H_{2/3}$ and $\hat{H} = H_{5/6}$ \\
+   3. for ($\tau \leftarrow c_1 \Delta^2$; $\tau > c_2 \log n$; $\tau \leftarrow \tau/2$) \hspace{2cm }\textit{// Main Phase}\\
+\hspace*{2em}      \alg{Reduce}($2 \tau$, $\tau$) \\
+    4. \alg{Reduce}($c_2 \log n$, 1)\hspace{5.25cm}\textit{// Final Phase}
+%    3. \alg{AccountFor}($\sqrt{d}$)
+\end{quote}
+
+%The correctness and time complexity follows the claims for each of the subalgorithms. 
+The first step clearly takes $\Theta(\log n)$ rounds.
+We show that \alg{Reduce}($\phi$,$\tau$) requires time $O(\phi/\tau\log n)$, so \alg{Reduce}($2\tau$,$\tau$) takes $O(\log n)$ rounds, while the last step takes $O(\log^3 n)$ time, w.h.p.
+%\ym{whp? MH: Yes}
+%
+\begin{corollary}
+  There is a randomized {\congest} algorithm for d2-coloring with $D+1$ colors with time complexity $O(\log^3 n)$, w.h.p.
+\end{corollary}
+
+We later replace Step 4 by an improved algorithm that reduces the overall time complexity to $O(\log \Delta \log n)$, obtaining a d2-coloring with $\Delta^2+1$-colors.
+
+\subsection{Initial Steps}
+
+%\paragraph*{Notation and Preliminaries}
+
+The \emph{palette} of available colors is $[\Delta^2] = \{0,1,2,\ldots, \Delta^2\}$. 
+%
+%Let $G^2[v]$ denote $N_G[N_G[v]]$.
+A node is \emph{$\zeta$-sparse} (or \emph{has sparsity} $\zeta$) if $G^2[v]$ contains $\binom{\Delta^2}{2} - \Delta^2\cdot \zeta$ edges \ym{at most that many edges. MH: No, it's better to have it equality.}.\ym{Do all later statements say sparsity "at least"..?} Thus, sparsity is a rational number in the range $0$ to $(\Delta^2-1)/2$.
+A node has \emph{slack $q$} if the number of colors of d2-neighbors plus the number of live d2-neighbors is $\Delta^2-q$.
+The \emph{leeway} of a node is its slack plus the number of live d2-neighbors; i.e., it is the number of colors from the palette that are not used among its d2-neighbors.
+During our algorithms nodes often do not know their leeway and we only use the notion for the analysis.
+
+\subsubsection{Leveraging sparsity} 
+
+\paragraph*{Intuition}
+% Basic approach for ordinary coloring
+A basic approach for randomized distributed algorithms for ordinary $\Delta^2+1$-coloring is for each node to guess a random color that is currently not used among any of its neighbors. Each guess succeeds with constant probability, which leads to logarithmic time complexity. This method doesn't work in the d2-setting because the nodes don't have enough bandwidth to learn the colors of their d2-neighbors.
+
+% Random guesses
+Instead, nodes can simply try random color from the whole palette. If the palette has $(1+\epsilon)\Delta^2$ colors, then this approach succeeds in $O(\log_{1/\epsilon} n)$ rounds. For a $\Delta^2+1$-coloring, we must be more parsimonious. 
+
+% Sparsity
+If each neighborhood is sparse, then the first round will result in many neighbors successfully using the same color. 
+%By sparse, we mean that the number of triangles involving a given node is at most $(1-\epsilon)\Delta^2$, or \emph{$\epsilon$-sparse}. 
+This offers us then the same slack as if we had a larger palette in advance (as proved by \cite{EPS15}), resulting in the same logarithmic time complexity.
+%The challenge is then to deal with \emph{dense} neighborhoods. 
+%We use the following result of \cite{EPS15}.
+
+\begin{proposition}[\cite{EPS15}, Lemma 3.1]
+%If $v$ is a vertex of sparsity $\zeta = \Omega(\log n)$, then the slack of $v$ after the first round of \alg{d2-Color} is at least $\zeta/(4 e^3) = \Theta(\zeta)$, w.h.p. \todo{Check exact constant}
+%\iffalse
+Let $v$ be a vertex of sparsity $\zeta$ and let $Z$ be the slack of $v$ after the first round of \alg{d2-Color}. Then, 
+%\footnote{We changed the constant, because our sparsity definition is slightly different.}
+ $\Pr[Z \le \zeta/(4 e^3)] \le e^{-\Omega(\zeta)}$.
+%\[ \Pr[Z \le \zeta/(4 e^3)] \le e^{\Omega(\zeta)}\ . \]
+%\fi
+\label{P:sparsity}
+%\ym{This proposition is so crucial for us that we should provide an explicit citation with a thm number. MH: Added}
+\end{proposition}
+
+In particular, the proposition implies the following, by recalling that a $\zeta$-leeway node succeeds in trying a random color with probability $1/\zeta$.
+%\footnote{Add: Why we need this observation}
+
+\begin{observation}
+%For any constant $c_1>0$ we can choose the constant $c_0$ in Step 1  of \alg{d2-Color} such that after the step, all live nodes have leeway less than $c_1 (\Delta^2+1)$, w.h.p.
+After Step 1 of \alg{d2-Color}, all live nodes have leeway less than $c_1 \Delta^2$, w.h.p.
+\label{O:sparse}
+\end{observation}
+
+\begin{proof}
+Let $v$ be a node of leeway $\phi \ge c_1 \Delta^2$ or more at the end of Step 1.
+Then, in each iteration of the step, the color tried by $v$ has probability $\phi/\Delta^2 \ge c_1$ of being previously unused by d2-neighbors of $v$. Furthermore, the probability that no other d2-neighbor tries the same color in the same round is at least $(1-1/(\Delta^2+1))^{\Delta^2} \ge 1/e$, applying (\ref{eq:inv-e}). Thus,
+%These events\ym{These events refers to other nodes trying the same color? MH: No, previously unused vs. tried in the same round} are independent, so 
+with probability at least $\phi/(e \Delta^2) \ge c_1/e$, $v$ becomes colored in that round. Hence, the probability that it is not colored in all $c_0 \log n$ rounds is at most $(1-c_1/e)^{c_0\log n} \le e^{-c_0 c_1/e \log n} \le n^{-c_0 c_1/e} \le n^{-3}$, applying the bound $c_0 \ge 3e/c_1$.
+%$(1-\phi/(4\Delta^2))^{c_1 \Delta^2/\phi \cdot \log n} \le e^{c_1/4 \cdot \log n} \le n^{c_1/4}$. 
+%Since $c_0 \ge 3e/c_1$, this holds with probability at most $1/n^3$.
+So, with probability at least $1-1/n^2$, all nodes have leeway at most $c_1 \Delta^2$ after Step 1.
+%By setting $c_0$ large enough, it holds w.h.p.\ that $v$ is colored after the first phase.
+%In other words, if $v$ is live after the first phase, then w.h.p.\ $v$ has leeway less than $c_1 \Delta^2$ after the step. 
+%That means that it has slack greater than $\phi$ and fewer than $\phi$ live d2-neighbors. 
+%By Prop.~\ref{P:sparsity}, $v$ is then also $O(\phi)$-sparse.
+\end{proof}
+
+One implication is that after Step 1, each live node has at least $(1-c_1)\Delta^2$ colored neighbors.  \ym{More details}
+%Also, they have sparsity at most $\Delta^2/80$, if $\Delta^2 > c\log n$.
+
+
+
+\subsection{Forming the similarity graphs} 
+
+We form the \emph{similarity graph} $H = H_{2/3}$ on the nodes of $V = V(G)$, where nodes are adjacent only if they are d2-neighbors and have at least $2\Delta^2/3$ d2-neighbors in common.
+This is implemented in the sense that each node knows:
+a) whether it is a node in $H$, and
+b) which of its immediate neighbors are adjacent in $H$.
+If a node has no neighbor in $H$, we consider it to be not contained in $H$.
+
+When $\Delta^2 = O(\log n)$, the nodes can learn of all their $H$-neighbors exactly, by simple flooding two hops. In this case, we can define $H$ as edges between d2-neighbors that share at least $2\Delta^3/3$ common d2-neighbors. We focus from here on the case that $\Delta^2 \ge c_4\log n$, for appropriate constant $c_4$.
+
+To form $H$, each node chooses independently with probability $p = c_4(\log n)/\Delta^2$ whether to enter a set $S$. Nodes in $S$ inform their d2-neighbors of that fact. For each node $v$, let $S_v$ be the set of d2-neighbors in $S$. W.h.p., $|S_v| = O(\log n)$ (by Prop.~\ref{P:chernoff}). Each node $v$ informs its immediate neighbors of $S_v$, by pipelining in $O(\log n)$ steps.
+Note that a node $w$ can now determine the intersection $S_v \cap S_u$, for its immediate neighbors $v$ and $u$.
+Now, d2-neighbors $u$, $v$ are $H$-neighbors iff $|S_v \cap S_u| \ge \myfrac{5}{6} c_4 \log n$. 
+%However, for the purpose of establishing edges in $H$, the node $w$ only considers those intermediate neighbors such that $d(w) \cdot d(v) \ge \Delta^2/4$.
+\ym{Should write the theorem with general $k$ and then have both explicit choices as a corollary. Right now, the second choice is not formal at all. MH: It is a straightforward variation. Not sure if it's worth the effort, given the limited time.}
+\begin{theorem}
+Let $u,v$ be d2-neighbors. 
+If $(u,v) \in H$ (i.e., if $|S_v \cap S_u| \ge \myfrac{5}{6} c_4 \log n$), then they share at least $\nicefrac{2}{3}\, \Delta^2$ common d2-neighbors, w.h.p.,
+while if $(u,v) \not\in H$, then they share fewer than $\nicefrac{11}{12}\, \Delta^2$ common d2-neighbors, w.h.p.
+\label{T:similarity}
+\end{theorem}
+The proof is a standard application of Chernoff bounds (\ref{eq:chernoff-upper}-\ref{eq:chernoff-lower}).
+\begin{proof}
+If $\Delta^2 \le c_4\log n$, nodes are $H$-neighbors iff they have at least $4d^2/5$ common d2-neighbors. Assume then that $\Delta^2 \ge c_4\log n$.
+
+Let $I_{uv} = G^2[u]\cap G^2[v]$ be the intersection of the d2-neighborhoods of $u$ and $v$. 
+For each $w \in I_{uv}$, let $X_w$ be the indicator r.v.\ that $w$ is
+selected into the random sample $S$ and let $X = \sum_{w \in I_{uv}} X_w$. Note that $\mu = E[X] = c_4 (\log n)/\Delta^2 \cdot |I_{uv}|$.
+
+First, suppose $|I_{uv}| \le \nicefrac{2}{3}\, \Delta^2$.
+Then $\mu \le \nicefrac{2}{3}\, (c_4\log n)$ and
+by (\ref{eq:chernoff-upper}), the probability that $u$ and $v$ are neighbors in $H$ is bounded by
+  \[ \Pr[uv \in H] = \Pr[X \ge \nicefrac{5}{6}\, c_4 \log n]
+\le \Pr[X \ge \nicefrac{5}{4}\,\mu] \le e^{-\nicefrac{2c_4}{3\cdot 48}\, \log n} \le n^{-c_4/72}\ . \]
+\footnote{Need to check better this last inequality.} 
+Thus, setting $c_4$ large enough implies that the first half of the claim holds.
+
+Now, suppose $|I_{uv}| \ge \nicefrac{11}{12}\, \Delta^2$.
+Then, $\mu \ge \nicefrac{11}{12}\, (c_4\log n)$.
+By (\ref{eq:chernoff-lower}), the probability that $u$ and $v$ are non-neighbors in $H$ is bounded above by
+  \[ \Pr[uv \not\in H] = \Pr[X < \nicefrac{5}{6}\, c_4 \log n]
+\le \Pr[X < \nicefrac{10}{11}\,\mu] \le e^{-\mu/(2\cdot 11^2)} \le e^{-c_4/(2\cdot 11 \cdot 12)\, \log n} = n^{-\Omega(c_4)}\ . \]
+Thus, setting $c_4$ large enough implies that the second half of the claim holds.
+\end{proof}
+
+
+We also form the graph $\hat{H} = H_{5/6}$ in an equivalent manner.
+For $H_{1-k}$, the condition used by the algorithm becomes $|S_v \cap S_u| \ge (1-k/2)c_4 \log n$ and the case of when $(u,v) \not\in H_{1-k}$ is when they share fewer than $(1-k/4)\Delta^2$ common neighbors.
+
+
+One useful observation is that for dense nodes, almost all d2-neighbors are also $H$-neighbors. The following lemma applies both to $H = H_{2/3}$ and $\hat{H} = H_{5/6}$.
+
+\begin{lemma}
+A node of sparsity $\zeta$ has at least $\Delta^2 - 8\zeta/k -4/k$ neighbors in $H_{1-k}$. 
+%Also, if $\zeta \le \Delta^2/8$, then it has at least $\Delta^2/2$ neighbors in $H_{1-k}$.
+\label{L:h-degree}
+\end{lemma}
+ 
+ \begin{proof}
+ Let $v$ be a $\zeta$-sparse node.
+% By sparsity, $G^2[v]$ contains $\Delta^2 (\Delta^2 - 2\zeta)/2$ edges. 
+Let $k' = 1 - k/4$.
+%Let $t$ denote the number of 2-paths between d2-neighbors of $v$, i.e., in $G[N_{G^2}(v)]$.
+A d2-neighbor of $v$ that is not a $H_{1-k}$-neighbor can share at most $k' \Delta^2$ common d2-neighbors with $v$, by Thm.~\ref{T:similarity}, while $H_{1-k}$-neighbors can share up to $\Delta^2-1$ d2-neighbors with $v$.
+In other words, the d2-neighbors of $v$ can have degree at most 
+$\Delta^2-1$ ($k'\Delta^2$) in $G^2[v]$ if they are $H$-neighbors (non-$H$-neighbors), respectively.
+The number of edges in $G^2[v]$ is then at most
+\[ \frac{1}{2}\left( |N_{H_{1-k}}(v)| \Delta^2 + (\Delta^2 - |N_{H_{1-k}}(v)|) k' \Delta^2\right) = 
+\frac{\Delta^2}{2} \left(k' \Delta^2 + |N_{H_{1-k}}(v)| \frac{k}{4}\right) \ . \]
+By the definition of sparsity, the number of edges in $G^2[v]$ equals $\Delta^2((\Delta^2-1)/2 - \zeta)$.
+%, by the definition of sparsity. Each edge $(u,u')$ in $G^2[v]$ corresponds to at least two 2-paths in $G[N_{G^2}(v)]$. Thus,\[ t \ge \frac{\Delta^2}{2} \left(\frac{\Delta^2-1}{2} - \zeta\right)\ . \]
+Combining the two bounds, 
+%Combining the two bounds on the number of edges in $G^2[v]$ we get that 
+\[ |N_{H_{1-k}}(v)| \frac{k}{4} \ge \Delta^2 - 1 - 2\zeta - k'\Delta^2 
+  = \Delta^2 \frac{k}{4}  - 1 - 2\zeta \]
+Namely, the number of $H_{1-k}$-neighbors of $v$ is bounded below by $\Delta^2 - 8\zeta/k -4/k$.
+%
+%On average, a node in $G^2[v]$ has $\Delta^2 - 2\zeta$ neighbors in $G^2[v]$, by sparsity, while it can at most have $\Delta^2$ such neighbors. Thus, by a version of Markov inequality, at least half of them have at least $\Delta^2 - 4\zeta$ d2-neighbors in common with $v$. Thus, if $\zeta \le k \Delta^2/8$, ...
+\end{proof}
+
+The following \emph{non-expansion property} is essential to the success of our algorithm.
+
+\begin{lemma}
+Let $v$ be $\zeta$-sparse.
+The number of nodes that are within distance 2 of $v$ in $H$ but are not d2-neighbors of $v$ is
+$|N_{H^2}(v) \setminus N_{G^2(v)}| \le 6\zeta$.
+\label{L:h2}
+\end{lemma}
+%
+\begin{proof}
+By sparsity, there are $\nicefrac{1}{2}\, \Delta^2(\Delta^2 - 2\zeta)$ edges within $G^2[v]$. Thus, there are at most $2\zeta \Delta^2$ edges of $H$ that have exactly one endpoint in $N_{G^2}(v)$. Nodes in $N_{H^2}(v)$ share at least $\Delta^2 - \Delta^2/3 - \Delta^2/3 = \Delta^2/3$ d2-neighbors with $v$. Thus, there are at most $6\zeta$ nodes in $H^2[v]$ that are not in $G^2[v]$.
+\end{proof}
+
+\subsection{Coloring 'With a Little Help From My Friends'}
+
+\paragraph{Intuition}
+We describe here a method to eliminate live nodes of a certain leeway.
+The basic idea behind the algorithm is to have already colored nodes "help" the live (i.e., yet uncolored) nodes by checking random colors on their neighborhoods.
+
+% Case of a clique
+We can obtain some intuition from the densest case: a $\Delta^2+1$-clique (in $G^2$).
+We can recruit the colored nodes to help the live nodes guess a color: if it succeeds for the colored node, it will also succeed for the live node. Each of the $\ell$ live nodes can be allocated approximately $\Delta^2/\ell$ colored node helpers, and in each round, with constant probability, one of them successfully guesses a valid color. Thus, the time complexity becomes $O(\log n)$. \ym{More details. For which $\ell$? How does $\ell$ influence this? MH: $\ell$ is the number of live nodes within the clique. Can be any number. Just trying to give basic intuition about how colored nodes can help the live ones.}
+
+% Challenge
+The challenge in more general settings is that the nodes no longer have identical (closed) d2-neighborhoods, so a successful guess for one node doesn't immediately translate to a successful color for another node.
+To this end, we must deal with two types of errors.
+A \emph{false positive} is a color that works for a colored node $w$ but not for its live d2-neighbor $v$, while a \emph{false negative} is a color that fails for the colored node but succeeds for the live node.
+It is not hard to conceive of instances where there are no true positives.
+\ym{If we have time let's insert a picture. MH: Might be a good idea.}
+
+% Approach
+The key to resolving this is to use only advice from nodes that have highly \emph{similar} d2-neighborhoods, or with at least a certain constant fraction of the possible $\Delta^2$ d2-neighbors possible in common. This is captured as a relationship on the nodes: the similarity graph $H$.
+To combat false negatives, we also try colors of similar nodes that are not d2-neighbors of the live node but have a common (and similar) d2-neighbor with the live node, i.e., the colors of nodes in $N_{H^2}(v) \setminus N_H(v)$.
+
+% Additional challenges
+Additional challenges and pitfalls abound. We must carefully balance the need for progress with the load on each node or edge. Especially, the efforts of the live nodes are a precious resource, but we must allow for their distribution to be decidedly non-random.  
+In addition, there are differences between working on 2-paths in $G$ and on edges in $G^2$: there can be multiple 2-paths between d2-neighbors. This can confound seemingly simple tasks such as picking a random d2-neighbor.
+
+\paragraph*{Algorithm} The algorithm \alg{Reduce} is largely asynchronous, where nodes react to received messages. Only the last steps of trying colors is assumed to be synchronous.
+After stating the algorithm, we describe in more detail the implementation steps.
+%\begin{quote}
+\bigskip
+
+   \textbf{Algorithm} \emph{Reduce}($\phi$, $\tau$) \\
+    \emph{Precondition}: Live nodes have leeway less than $\phi$, where $\Delta^2 \ge \phi \ge c_2\log n$ \\
+    \emph{Postcondition}: Live nodes have leeway less than $\tau$
+
+
+%\begin{enumerate}[nosep]
+\begin{enumerate}
+\itemsep0em 
+  \item Each live node $v$ sends a query across each 2-path to $\hat{H}$-neighbors independently with probability $\min(c_2/\tau \cdot \log n, 1)$. If $\tau < c_2\log n$, then it sends $\lceil c_2/\tau \cdot \log n\rceil$ queries along each 2-path.
+  \item The recipient $u$ of a query $(v,u)$ verifies that there is only a single 2-path from $v$, and otherwise drops the message.
+  \item Upon validation of query ($v,u$), the node $u$ picks a random color $\hat{c}$ different from its own and checks if it is used by any of its $H$-neighbors. If not, it sends the color to $v$.
+  \item (Upon validation of query ($v,u$)) $u$ also forwards the query to a uniformly random $H$-neighbor $w$, with its ID appended.
+  \item Upon receipt of query $(v,u,w)$, node $w$ checks if $v$ is a d2-neighbor; if not, the color $c(w)$ of $w$ is sent to $v$ (through $u$).
+%  \item After receiving a  $c(w)$ to a query $(v,u,w)$, the node $u$ proposes to $v$ two colors : $c(w)$ and a uniformly randomly chosen color $\hat{c}$.\\
+%  FK: I think, we need the following. If $u$ gets a successful response $c(w)$, it proposes $c(w)$ to $v$. In any case, $u$ chooses a random color $\hat{c}$ and $u$ checks if $\hat{c}$ is used by any of its $H$-neighbors. If $\hat{c}$ is not used by an $H$-neighbor, $u$ proposes $\hat{c}$ to $v$
+  \item The live node $v$ tries any proposed color that it receives (either as $c(w)$ or as $\hat{c}$). In each round, it tries a received color with probability $\tau/(4\phi)$, and with probability $1-\tau/(4\phi)$ is silent.
+  \end{enumerate}
+%\end{quote}
+\bigskip
+
+\subsubsection{Reduce: Implementation of Step 1-6}
+\paragraph{Step 1:}
+When sending a query along 2-paths in Step 1, the node $v$ simply asks its immediate neighbors to send the queries to all of their immediate neighbors that are $H$-neighbors of $v$, with the given probability.
+\paragraph{Step 2:}
+Verifying that there is only a single path from $v$ is achieved by asking $u$'s immediate neighbors how many are neighbors of $v$. Checking if a color is used by an $H$-neighbor is identical to trying a color, but having the immediate neighbors only taking into account the colors of $u$'s $H$-neighbors.
+\paragraph{Step 4:} We detail how the uniform random selection of $H$-neighbors in Step 4 is achieved. Each node $u$ creates a $2\log n$-bit random string $b_m$ for each query $m=(v,u)$ that it receives and sends to all its immediate neighbors. Each node $w$ also picks a $2\log n$-bit random string $r_w$ and sends to immediate neighbors. Now, each immediate node $u'$ computes the bitwise XOR $x_{mw}$ of each string $b_m$ and each string $r_w$ that it receives, where $u$ and $w$ are $H$-neighbors. It forwards $r_w$ to $u$ if and only if the first $2\log \Delta - c_6 \log\log n$ bits of $x_{mw}$ are zero, where $m=(v,u)$ for some $v$. The node $u$ then identifies the $H$-neighbor $w$ whose string $r_w$ results in the smallest bitwise XOR with $b_m$ (for each query $m=(v,u)$). 
+%The string of a given node gets forwarded with probability $2^{c_6} \log n / \Delta^2$, in response to a given message, so in expectation $2^{c_6}\log n$ strings get forwarded. Hence, with high probability, 
+\ym{let's quickly talk about this process again}
+
+\begin{lemma}
+The above procedure results in fully independent random $H$-neighbor selection.
+\label{L:rand-nbor}
+\end{lemma}
+\begin{proof}
+Each d2-neighbor's string $r_w$ gets forwarded (by $u'$) in response to a given query $m=(v,u)$ with probability $2^{c_6}\log n / \Delta^2$. Thus, the number of strings that get forwarded to $u$ for the query $m$ is expected $2^{c_6} \log n$, and w.h.p. $\Theta(\log n)$. Hence, the node $u$ will correctly identify the $H$-neighbor whose bitstring has the smallest XOR with its random string, which gives a uniformly random sampling.
+
+Independence follows because a collection $\{r_w\}_w$ of uniformly random bitstrings that is XORed with a particular (not necessarily random) bitstring $b_m$ forming collection $\{ b_m \oplus r_w\}_w$ stays uniformly random.
+The same holds then for the collection of strings $\{b_m\}_m$
+that is XORed with a string $r_w$ of a fixed node forming a uniformly random collection $\{b_m \oplus r_w\}_m$. 
+\end{proof}
+
+\paragraph{Step 3-6:}
+The remaining steps of \alg{Reduce} are straightforward to implement. We note that a query from a live node $v$ maintains a full routing path to $v$, so getting a proposal back to $v$ is simple.
+
+\subsubsection{Reduce: Correctness}
+During this whole section we assume that the precondition of \alg{Reduce} is satisfied, i.e., any live node has leeway at most $\phi \le c_1 \Delta^2$ and $\phi\geq c_2\log n$ for a suitable constant $c_2$. 
+We also assume that the sparsity bound of Prop.~\ref{P:sparsity} holds for every node, and that nothing goes wrong when building the similarity graphs.
+All statements in this section are conditioned on these events.
+
+%\ym{All statements in this section are conditioned on the event that nothing goes wrong when building the similarity graphs, i.e., ...}
+%\ym{Where do we choose $c_2$? MH: It's now unified with $c_2$.}
+% The following corollary relies on executing sufficiently many steps in the initial phase, i.e, it requires a sufficiently small constant $c_1$. \ym{elaborate. MH: What do we want to elaborate here?}
+
+\begin{observation}
+A node $v$ that is live at the start of a call \alg{Reduce}($\phi,\tau$) by \alg{d2Color} has sparsity at most $\zeta \le 4e^3\phi \le 4e^3 c_1 \Delta^2$.
+\label{O:livesparse}
+\end{observation}
+
+\begin{proof}
+Since $v$ is live, it has leeway (and thus slack) at most $\phi$, by the precondition of the algorithm. 
+\alg{Reduce}($\phi$,$\tau$) is only called by \alg{d2-Color} for $\phi \le c_1 \Delta^2$, as shown sufficient by Obs.~\ref{O:sparse}.
+By the contrapositive of
+Prop.~\ref{P:sparsity} it follows that it has sparsity $\zeta \le 4 e^3 \phi$.
+\end{proof}
+
+\begin{lemma}
+A node $v$ that is live after the initial phase has at least $\Delta^2/2$ $\hat{H}[v]$-neighbors with a single 2-path to $v$.
+%\ym{This w.h.p. is over which randomness? It holds deterministically if $\hat{H}$ is built successfully and if the precondition holds. MH: Right, have added a disclaimer at the start of the subsection.}
+\label{L:hat-neighbors}
+\end{lemma}
+
+\begin{proof}
+By Obs.~\ref{O:livesparse}, $v$ is $\zeta$-sparse for $\zeta \le 4e^3 \phi$, and by Obs.~\ref{O:sparse}, $\phi \le 4 e^3 c_1 \Delta$, w.h.p.
+Thus, by Lemma \ref{L:h-degree}, it has at least $\Delta^2 - 48\zeta - 24 \ge \Delta^2 - 50\zeta$ neighbors in $\hat{H}$. At most $\phi$ of those nodes have more than one 2-path to $v$, since $v$'s slack is at most $\phi$. Hence, it has at least $\Delta^2 - 50\zeta - \phi \ge \Delta^2(1 - 201 e^3 c_1) \ge \Delta^2/2$ $\hat{H}$-neighbors with a single 2-path to $v$, using that $c_1 \le 1/(402 e^3)$.
+\end{proof}
+
+The algorithm is based on each live node sending out a host of queries, to random neighbors in $\hat{H}$, and through them to their random $H$-neighbors. We argue that each query has a non-trivial probability of leading to the live node becoming colored.
+
+Let $v$ be a live node with leeway at least $\tau$ at the start of \alg{Reduce}($\phi,\tau$). 
+Let $r_v$ be the last round in the execution of \alg{Reduce}($\phi,\tau$) during which $v$ was live and with leeway at least $\tau$.
+A color is said to be \emph{$v$-good} if it is not used by nodes in $G^2[v]$ during round $r_v$. We say that a query from $v$ is a \emph{success} if it leads to a proposal of a $v$-good color. Observe that if a $v$-good color is proposed to $v$, then $v$ will be colored at the end of \alg{Reduce}($\phi,\tau$) (either by that or some other color). 
+Note that success is not defined for nodes that start with leeway below $\tau$.
+
+% This is the key argument for the correctness of the algorithm.
+
+%We argue that progress is made in each iteration, either from the random color guesses or from the queries to $H$-neighbors of the $\hat{H}$-neighbors. This is the key argument for the correctness of the algorithm.
+%\ym{Do we even need the $\Omega$-notation here in the probability? I think we do not which is much nicer for probabilities. The annoying part is the '+1' in the denominator}
+%\ym{Why do we not have problems with other vertices that just take that $v$-good color in the same round? How do we take care of other vertices in the $d2$-neighborhood of $v$ that get proposals and try them. They could be identical with the proposals that $v$ gets. MMH: Very good point. This should be dealt with now.}
+
+%
+\begin{lemma}
+Each query that does not get dropped succeeds with probability at least $\tau/(4\Delta^2)$.
+\label{L:progress}
+\end{lemma}
+
+\begin{proof}
+Denote the query by $(v,u)$, where $v$ is a live node of leeway at least $\tau$ at the start of the algorithm and $u$ is its $\hat{H}$-neighbor.
+Let $\Psi_v$ denote a set of $\tau$ $v$-good colors (i.e., the colors of $\Psi_v$ do not appear among the d2-neighbors of $v$ during round $r_v$). We consider two cases.
+
+Suppose first that $u$ has fewer than $\tau/2$ $H$-neighbors with colors from $\Psi_v$ when $u$ checks a random color (in Step 3). There are then at least $\tau - \tau/2 = \tau/2$ colors in $\Psi_v$ do not appear on $H$-neighbors of $u$. Those colors are $v$-good and satisfy the check that $u$ makes.
+Then, the probability that $u$'s random color pick leads to a $v$-good proposal  is at least $\tau/(2\Delta^2)$ (recalling that $u$ picks a random color from the $\Delta^2$ that differ from its own).
+
+Suppose next that when $u$ picks a random color, it
+has at least $\tau/2$ $H$-neighbors with colors from $\Psi_v$.  These neighbors still have those colors when $u$ picks a random $H$-neighbor.
+Then with probability at least $(\tau/2)/|N_H(u)| \ge \tau / (2\Delta^2)$, the query will be sent to one of those nodes, which leads to a proposal of a color from $\Psi_v$. 
+In either case, $v$ receives a $v$-good color from $\Psi_v$ in response to the query, with probability at least $\tau/(2\Delta^2)$.
+
+Finally, we need to take into account that other live nodes might try the same color at the same time.
+$v$ has at most $\phi$ live d2-neighbors and expected $\tau/(4\phi)$ fraction of them, or $\tau/4$, tries a color at the same time as $v$.
+Independent of what colors they try, the probability that $v$ tries a $v$-good color that is different from all of them is at least $(\tau/2 - \tau/4)/(\tau/2) = 1/2$. 
+%
+Hence, the probability that the given query is successful is at least $\tau/(4\Delta^2)$.
+\end{proof}
+
+\iffalse %% Old version
+\begin{lemma}
+Each query that does not get dropped succeeds with probability at least $\tau/(4\Delta^2)$.
+%\begin{lemma}[queries succeed with probability $\Omega(\tau/\Delta^2)$] Let $v$ be node that has at least leeway $\tau$ at the start of one iteration of \alg{Reduce} and let $u$ be a $\hat{H}$-neighbor of $v$ that receives a non-dropped query $(v,u)$ from $v$ in step 2. Then $u$ proposes a $v$-good color with probability  $\Omega(\tau/\Delta^2)$.
+\label{L:progress}
+\end{lemma}
+
+\begin{proof}
+Denote the query by $(v,u)$, where $v$ is a live node of leeway at least $\tau$ at the start of the algorithm and $u$ is its $\hat{H}$-neighbor.
+%and by the assumptions of the lemma the query does not get dropped by $u$ to multiple paths to $v$.
+
+If $u$ has at least $\tau/2$ $H$-neighbors with $v$-good colors, then with probability at least $(\tau/2)/|N_H(u)| \ge \tau / (2\Delta^2)$, $v$ will be successfully colored with the color of one of those nodes.
+If, on the other hand, $u$ has fewer than $\tau/2$ $H$-neighbors with $v$-good colors, there are at least $\tau - \tau/2 = \tau/2$ colors that are $v$-good and do not appear on $H$-neighbors of $u$. Those colors are both $v$-good and 
+%\ym{What does 'both' refer to here? MH: Reworded.} 
+satisfy the check that $u$ makes. 
+$u$ picks a random color from the $\Delta^2$ that differ from its own.
+Then, the probability that $u$'s random color pick is good for $v$ is at least $\tau/(2\Delta^2)$.
+%\ym{can we exclude the color that $u$ has from this choice to make the probability nicer and not have the $'+1'$?} MMH: Good idea
+In either case, $v$ receives a $v$-good color in response to the query, with probability at least $\tau/(2\Delta^2)$.
+%$\min\{\tau / (2\Delta^2), \tau/(2(\Delta^2+1))\}=\tau/(2(\Delta^2+1))$.
+
+Finally, we need to take into account that other live nodes might try the same color at the same time.
+$v$ has at most $\phi$ live d2-neighbors and expected $\tau/(4\phi)$ fraction of them, or $\tau/4$, tries a color at the same time as $v$.
+Independent of what colors they try, the probability that $v$ tries a $v$-good color that is different from all of them is at least $(\tau/2 - \tau/4)/(\tau/2) = 1/2$. 
+%
+Hence, the probability that the given query is successful is at least $\tau/(4\Delta^2)$.
+\end{proof}
+\fi
+
+The correctness of the algorithm now follows easily by concentration.
+\begin{theorem}
+There is a choice of $c_2>1$ such that if all messages of one execution of \alg{Reduce} are delivered the postcondition holds, w.h.p. Namely, all nodes of leeway at least $\tau$ are colored in the call to \alg{Reduce}($\phi,\tau$), w.h.p.
+%\ym{We need to add the quantification of $c_2$ in the theorem statement. A bit annoying because the $\tau=1$ case is slightly different. Not sure about the easiest fix. Not correct yet. I dislike the current formulation that I added.} MMH: Should be fixed now.
+\end{theorem}
+
+\begin{proof}
+Let $v$ be a node of leeway at least $\tau$ that is live at the start of \alg{Reduce}($\phi,\tau$).
+Let $N'_v$ be the set of nodes in $\hat{H}[v]$ that have a single 2-path to $v$, and recall that by Lemma \ref{L:hat-neighbors}, $|N'_v| \ge \Delta^2/2$.
+The number of queries sent from $v$ and not dropped is expected $c_2 |N'(v)|/\tau \cdot \log n \ge (c_2 \Delta^2 \log n)/(2\tau)$, and by Chernoff at least $(c_2\Delta^2\log n)/(4\tau)$, with probability at least $1-n^2$, since $\tau \le \Delta^2/16$.  
+Each succeeds independently with probability at least $\tau/(4\Delta^2)$, by Lemma \ref{L:progress}. 
+The probability that none of them succeed is at most
+\[ (1 - \tau/(8\Delta^2))^{c_2\Delta^2 \log n)/(2\tau)} \le e^{-c_2/16 \cdot \log n} \le n^{-c_2/16} \ . \]
+The probability that some node remains live after \alg{Reduce}($\phi,\tau$) is at most $n^{-c_2/16+1}$.
+Setting $c_2 \ge 48$ ensures that this occurs with probability at most $1/n^2$.
+\end{proof}
+
+
+\iffalse %% Old proof
+\begin{proof}
+Let $v$ be a node of leeway at least $\tau$ that is live at the start of \alg{Reduce}($\phi,\tau$). 
+Let $N'_v$ be the set of nodes in $\hat{H}[v]$ that have a single 2-path to $v$, and recall that by Lemma \ref{L:hat-neighbors}, $|N'_v| \ge \Delta^2/2$.
+A node $u \in N'_v$ receives a query from $v$ with probability $c_2/\tau \cdot \log n$, and answers it with a $v$-good color with probability at least $\tau/(4\Delta^2)$, by Lemma \ref{L:progress}.
+Thus, for a given $u\in N'_v$ the probability that $v$ requests from $u$ and that $u$ responds with a $v$-good color is at least 
+\begin{align*}
+    (c_2/\tau \cdot \log n)\cdot(\tau/(\Delta^2)) = c_2 \log n /(2 \Delta^2) \ .
+    %    \Omega((c_2/\tau \cdot \log n)\cdot((\tau/\Delta^2))=\Omega(c_2 \log n / \Delta^2)
+\end{align*}
+This probability is independent for different vertices $u\in N'_v$ as it only depends on the randomness of the queries that $v$ sends and the randomness in the distinct vertices $u$.
+Hence, the probability that no $v$-good color is recorded from any $u\in N'_v$, is \begin{align*}
+    (1-c_2\log n /(2 \Delta^2))^{|N'_v|} \le e^{-c_2/4 \cdot \log n} = n^{-c_2 \Omega(1)}.
+\end{align*}
+By a union bound over all vertices with leeway at least $\tau$ at the start of \alg{Reduce}, some node remains live after \alg{Reduce} with probability at most $n^{1-c_2 \Omega(1)}$. 
+We can choose $c_2$ to make the probability an arbitrarily low degree polynomial.
+\emph{FK: In order to choose $c_2$ sufficiently large, we need to choose $\tau$ large enough to make sure that $c_2\cdot \log n /\tau\leq 1$ (i.e., such that it still is a probability). MMH: Right. What works is to send expected $\lceil c_2\cdot \log n / \tau\rceil$ messages. The question if that is the best way to change it.}
+\end{proof}
+\fi
+
+Observe that after \alg{Reduce}($\phi$,1), all nodes are colored, w.h.p., since a live node always has leeway at least 1. 
+%FK: In this case, the algorithm does not work in the way it is phrased since node $v$ now sends a query on each $2$-hop path with probability $\gg1$. MMH: Yes, this is now fixed.
+
+%\paragraph{Choice of constants $c_0,c_1,c_2,\ldots$} Which ones do we choose large, which ones small. MH: Would you want explicit values for them, right from the start?
+
+\subsubsection{Reduce: Congestion and Time Complexity}
+We now turn to the time complexity.
+We will only prove this for the case when $\tau \ge c_2\log n$, i.e., the main phase of \alg{d2-Color}. The argument for the final phase is very similar, by switching to the \emph{number} of queries along a 2-path instead of the \emph{probability} of a query along that path \ym{We do not prove this as we anyway use a different final phase in our best algorithm}. In the following subsection, we give an improved algorithm for the final phase, with a full proof.
+
+\ym{Congestion at intermediate nodes: MH: I argue that what comes into each node is $O(\log n)$. That then also bounds the load on each incoming/outcoming edge, and therefore the load on the intermediate nodes.}
+\ym{yes, that's what I thought but I didn't find the line that does exactly this reasoning. }
+
+
+\begin{theorem}
+\alg{Reduce}$(\phi,\tau)$ runs in $O((\nicefrac{\phi}{\tau})^2\, \log n)$ rounds, w.h.p.
+%, assuming $\phi = \Omega(\log n)$.
+\label{T:reduce-time}
+\end{theorem}
+
+The main effort is in bounding the average contention on each edge. We bound the number of queries and proposals that go through nodes, which then bounds the traffic on each incident edge.
+
+
+We bound the following types of congestion during the execution of $\alg{Reduce}(\phi,\tau)$.
+\begin{itemize}
+    \item the number of queries a node $u$ gets as a result of Step 1 (\Cref{L:u-load})
+    \item the number of queries a  node $w$ gets as a result of Step 4 (\Cref{L:w-load})
+    \item the number of color proposals a live node $v$ gets (\Cref{L:v-load})
+\end{itemize}
+\ym{Quickly give intuition why these bounds are sufficient for the overall congestion}
+
+
+
+We first argue some support lemmas.
+%
+%A key to the success of our algorithm is the following strong \emph{non-expansion property} of the similarity graph $H$. 
+%\ym{Even though $H$ is only computed once these Lemmas refer to the precondition of live nodes. MMH: I have preconditioned all the mentions of live nodes in lemma statements.}
+
+
+%% Key observation: H has tep negligible expansion rate.
+\begin{lemma}
+Let $v$ be live at the start of \alg{Reduce}($\phi,\tau)$.
+The number of nodes within distance 2 of $v$ in $H$ but are not d2-neighbors of $v$ is $|N_{H^2}(v) \setminus N_{G^2(v)}| = O(\phi)$.
+\footnote{MH: We may eliminate this lemma, which now just combined an Obs. with a Lemma}
+\label{L:h4set}
+\end{lemma}
+%
+\begin{proof}
+By Obs.~\ref{O:livesparse}, $v$ has sparsity $\zeta \le 4e^3 \phi$, so
+by Lemma \ref{L:h2}, $|N_{H^2}(v) \setminus N_{G^2}(v)| \le 6\zeta \le 24 e^3\phi$.
+\end{proof}
+
+
+\begin{lemma}
+An $\hat{H}$-neighbor of a node that is live after the initial phase has at least $\Delta^2/3$ $H$-neighbors.
+%Let $v$ be a live node. A node in $\hat{H}[v]$ has at least $\Delta^2/2$ $H$-neighbors.
+\label{L:H-neighbors}
+\end{lemma}
+
+\begin{proof}
+Let $v$ be a node that is live after the initial phase and $u$ a node in $\hat{H}[v]$. Let $X$ be the set of nodes in $G^2[v]$ that share at least $2\Delta^2/3$ d2-neighbors of $G^2[v]$ with $u$, and let $Y$ be the set of d2-neighbors of $u$ in $G^2[v]$.
+We want to show that $|X \cap Y| \ge \Delta^2/3$.
+
+Since a node in $\hat{H}[v]$ shares at least $5\Delta^2/6$ d2-neighbors with $v$, any pair of nodes in $\hat{H}[v]$ share at least $\Delta^2 - 2\Delta^2/6 = 2\Delta^2/3$ d2-neighbors in $G^2[v]$. Namely, $|X| \ge |N_{\hat{H}}(v)|$, and by Lemma \ref{L:hat-neighbors}, $|N_{\hat{H}}(v)| \ge \Delta^2/2$. 
+Since $u$ is in $\hat{H}[v]$, $|Y| \ge 5\Delta^2/6$.
+Thus, $|X \cap Y| \ge |X| - |N_{G^2}(v)\setminus Y| \ge \Delta^2/2 - (1-5/6)\Delta^2 = \Delta^2/3$.
+\end{proof}
+
+We bound the congestion at the three main nodes along a query path, starting with Step 1.
+
+\begin{lemma}
+Each node $u$ receives $O(\phi/\tau \cdot \log n)$ queries as a result of Step 1 of \alg{Reduce}($\phi,\tau$), w.h.p.
+\label{L:u-load}
+\end{lemma}
+\begin{proof}
+Each live node sends a query to a $\hat{H}$-neighbor $u$ with probability $c_2/\tau \cdot \log n$. The number of live nodes within distance 2 in $H$ from a given live $H$-neighbor of $u$ is $O(\phi)$ by Lemma \ref{L:h4set}, w.h.p.
+Thus, the number of live nodes that are $\hat{H}$-neighbors of $u$ is $O(\phi)$.
+Hence, the expected number of queries that $u$ receives is $O(\phi) \cdot c_2/\tau \log n = O(\phi/\tau \cdot \log n)$.
+\end{proof}
+
+We next bound the load on nodes due to Step 4.
+
+\begin{lemma}
+Let $v$ be a live node at the start of \alg{Reduce}($\phi,\tau$) and let $w$ be of $H$-distance 2 from $v$.
+The probability that $w$ receives a query involving $v$ is $O(1/\tau \cdot \log n)$.
+\label{L:reqprob}
+\end{lemma}
+
+\begin{proof}
+For $w$ to be queried on behalf of $v$ via a given common $H$-neighbor $u$ (which in fact is a $\hat{H}$-neighbor of $v$), two independent events must happen: $v$ sends the query to $u$, and $u$ forwards it to $w$. Recall that $u$ only accepts the query if it has a unique 2-path to $v$, and the probability that it gets sent along this path is $c_2/\tau \cdot \log n$. $u$ has at least $\Delta^2/3$ $H$-neighbors by Lemma \ref{L:H-neighbors}, so the probability that $u$ forwards the query to $w$ is at most $3/\Delta^2$. 
+%\ym{Isn't a $\log n$ missing here? MMH: No, I don't think so.
+Hence, summing up over all intermediate nodes $u$, the probability that $w$ receives a query involving $v$ is at most $\sum_{u \in \hat{H}[v]} 3/\Delta^2 \cdot c_2/\tau \cdot \log n \le 3c_2/\tau \cdot \log n$.
+\end{proof}
+
+\begin{lemma}
+Each node $w$ receives $O(\phi/\tau \cdot \log n)$ queries as a result of Step 4 of \alg{Reduce}($\phi,\tau)$, w.h.p.
+\label{L:w-load}
+\end{lemma}
+\begin{proof}
+By Lemma \ref{L:h4set}, $w$ has $O(\phi)$ live $H^2$-neighbors, w.h.p.
+By Lemma \ref{L:reqprob}, $w$ receives a query from a live $H^2$-neighbor with probability $O(1/\tau \cdot \log n)$.
+\end{proof}
+
+We finally bound the load on the live nodes.
+
+\begin{lemma}
+The probability that a random query from a live node $v$ leads to a proposal in Step 3 of \alg{Reduce}($\phi,\tau$) is $O(\phi/\Delta^2)$.
+\label{L:color-proposal}
+\end{lemma}
+
+\begin{proof}
+By Obs.~\ref{O:livesparse}, $v$ has sparsity $\zeta \le 4e^3 \phi$, w.h.p. Thus, $G^2[v]$ contains $\binom{\Delta^2}{2} - \zeta \Delta^2$ edges. 
+By Lemma \ref{L:h-degree}, $v$ has degree $\Delta^2 - 48\zeta - 24$ in $\hat{H}$. The at most 
+$48\zeta+24$ nodes in $N_{G^2}(v) \setminus N_{\hat{H}}(v)$ have degree sum at most $(48\zeta+24) \Delta^2$. Thus, the number of edges in $\hat{H}[v]$ is at least  
+$\binom{\Delta^2}{2} - (49\zeta +24)\Delta^2 = \binom{\Delta^2}{2} - O(\phi)\Delta^2$.
+%There are at least $\binom{\Delta^2}{2} - O(\phi)\Delta^2$ edges in $\hat{H}[v]$.\footnote{MMH: This remains to be argued.} 
+Recall that at most $\phi$ nodes in $N_{\hat{H}}(v)$ can have multiple paths to $v$. Let $H'$ denote the subgraph of $\hat{H}[v]$ induced by nodes with a single 2-path to $v$.
+Then, $H'[v]$ has at most $\phi \Delta^2$ fewer edges than $\hat{H}[v]$, which is still $\binom{\Delta^2}{2} - O(\phi)\Delta^2$. A pair of nodes in $H'[v]$ have at least $2\Delta^2/3$ d2-neighbors of $v$ in common, since they each have at least $5\Delta^2/6$ d2-neighbors in common with $v$. Thus each edge in $H'[v]$ connects $H$-neighbors. In other words, nodes in $H'[v]$ have $\Delta^2 - c \cdot \phi$ $H$-neighbors, on average, for some constant $c > 0$: 
+\[ \sum_{u \in N_{H'}(v)} deg_H(u) \ge |N_{H'}(v)| (\Delta^2 - c\phi)\ , \]
+where $deg_{H}(u)$ denotes the number of $H$-neighbors of node $u$. By Lemma \ref{L:H-neighbors}, $deg_H(u) \ge \Delta^2/3$.
+
+The probability $p_u$ that a given $H'$-neighbor $u$ of $v$ picks a color that is not used among its $H$-neighbors, over the random color choices, is $p_u = (\Delta^2 - deg_{H}(u))/deg_{H}(u) \ge 3(1 - deg_H(u)/\Delta^2)$. The probability that a random query from $v$ leads to a color proposal is then 
+  \[ \frac{\sum_{u \in H'[v]} p_u}{|N_{H'}(v)|} \ge \frac{1}{|N_{H'}(v)|\Delta^2} \sum_{u \in H'[v]} 3 \left(\Delta^2 - deg_H(u)\right) \ge  \frac{2}{\Delta^2} \cdot c \phi \ . \]  
+\end{proof}
+
+% Load on live nodes
+\begin{lemma}
+A node $v$ that is live at the start of \alg{Reduce}($\phi,\tau$) receives $O(\phi/\tau \cdot \log n)$ color proposals during the call, w.h.p.
+\label{L:v-load}
+\end{lemma}
+\begin{proof}
+By Lemma \ref{L:h4set}, the number of nodes $w$ in $|H^2[v] \setminus G^2[v]| = O(\phi)$, and those are the only ones that produce proposals in Step 6. By Lemma~\ref{L:reqprob}, the probability that a given $w$ receives a query from $v$ is $O(1/\tau \cdot \log n)$.  Thus, $v$ receives expected $O(\phi/\tau \cdot \log n)$ proposals due to Step 6.
+
+By Lemma \ref{L:color-proposal}, the probability that  given query leads to a proposal in Step 4 is $O(\phi/\Delta^2)$. Since $v$ sends out $O(\Delta^2/\tau \cdot \log n)$ queries, the expected number of proposals is $O(\phi/\tau \cdot \log n)$, which by Chernoff also holds w.h.p.
+\end{proof}
+
+We are now ready to argue the time complexity.
+
+\begin{proof}[Proof of Theorem \ref{T:reduce-time}]
+We show that the expected communication load on each edge is $O(\phi/\tau \cdot \log n)$, 
+%The total load on each edge over the course of the whole algorithm is then expected $O(\phi/\tau \log n)$, 
+which by concentration (Prop.~\ref{P:chernoff}) also holds w.h.p. 
+The longest dependency chain is of constant length (we will soon reason that it is at most 12).
+Hence, the algorithm completes in $O(\phi/\tau \log n)$ steps, w.h.p.
+
+The longest message chain goes two hops from $v$ to $\hat{H}$-neighbor $u$;
+%\ym{Shouldn't it be $\hat{H}$ neighbor}; MMH: Right.
+to its $H$-neighbor $w$; to $w$'s immediate neighbors (to test whether $w$ is a $d2$-neighbor of $v$ in Step 5); all five steps back to $v$; and finally to $v$'s neighbors and back.
+It suffices to focus on the six forward messages. 
+
+%\ym{I think it is best to have a 'paragraph' heading for each paragraph here that explains which kind of contention is bounded in this paragraph. And at the start of the section we should explain why these are the only types of contention} MMH: I've moved the arguments to lemmas, to better separate them.
+
+% Load on immediate nodes
+Consider first the two hops from $v$ to $u$.
+The load on the first edge from $v$ to an immediate neighbors $v'$ is only 1, since multiple queries from $v$ through the same immediate neighbor are combined into one. 
+We have bounded the load on the nodes $u$ and $w$ in Lemmas \ref{L:u-load}, \ref{L:w-load}, respectively. This then gives the same upper bounds on the load all the incident edges (including the tests in Steps 2 and 5), and on the intermediate nodes.
+
+Lemma \ref{L:v-load} bounds the load on the live node $v$ (and its incident edges) due to trying proposed colors.
+The time complexity of that step is highest, due to the silent rounds, adding a factor of $\Theta(\phi/\tau)$ to the load, for a total of $O((\phi/\tau)^2 \log n)$. 
+
+It remains only the bound the effort in selecting a random $H$-neighbor in Step 4.
+The probability that a given immediate node $u'$ forwards a string in response to a given query is $2^{c_6}\log n / \Delta^2$. $u'$ deals with $O(\phi/\tau \log n)$ queries from each of its immediate neighbors $u$.
+ Thus, $u'$ forwards total expected $O((\phi/\tau \cdot \log n) \cdot (\log n) /\Delta^2)$ 
+strings to $u$, w.h.p., which is $O(\phi/\tau \log n)$, since $\Delta^2 \ge c_2 \log n$. 
+%\ym{ Is this supposed to bound the contention of a node in the uniform at random $H$-neighbor selection? If so, something is awkward here with the notation or I just cannot follow} MMH: I hope it's clearer.
+%The round complexity of this procedure is $O(\max(M,\log n))$, w.h.p., where $M = O(\phi/\tau \cdot \log n)$ is an upper bound on the number of messages each node $u$ receives.
+%
+% Load on queried nodes
+%\textbf{Load on queried nodes $w$:}\ym{What exactly do we mean by that?} Now consider the load on a queried node $w$. Since each intermediate node $u$ sends out $q = O(\phi/\tau \cdot \log n)$ queries (as we have argued), and it has at least $\Delta^2/3$ $H$-neighbors (by Lemma \ref{L:H-neighbors}), it follows that $w$ receives at most $3q = O(\phi/\tau \cdot \log n)$ queries. This then also corresponds to the load on each of its outgoing edges, to check if $w$ is a d2-neighbor of $v$. 
+\end{proof}
+
+\clearpage
+
+%\section{Handling logarithmic sparsity}
+\subsection{Algorithm with Improved Final Phase}
+
+We now give an improved algorithm for d2-coloring that uses $\Delta^2+1$ colors and runs in $O(\log \Delta\log n)$ rounds. We assume $\Delta$ is known to the nodes.
+This is achieved by replacing the final phase of \alg{d2-color} (i.e., the last step) with a different approach.
+%We now given an improved algorithm for the last step of \alg{d2-Color} that produces a $\Delta^2+1$-coloring runs in $O(\log n)$ rounds. Thus, we let $D=\Delta^2$ here, and assume $\Delta$ is known to the nodes. This improves the overall time complexity of the algorithm to $O(\log \Delta \log n)$.
+
+\paragraph*{Intuition}
+In the final phase of the improved algorithm, the nodes cooperate to track the colors used by the d2-neighbors of each live node. Thus, they learning the \emph{remaining palette}: the set of colors of $[\Delta^2]$ not used by d2-neighbors. Gathering the information about a single live node is too much for a single node to accumulate, given the bandwidth limitation. Instead, each live node chooses a set of \emph{handlers}, each handling a subrange of its color spectrum. The colored nodes then need to forward their color to the appropriate handler of each live d2-neighbor. After learning about the colors used, each of the multiple handlers choose an unused color at random and forward it to the live node. The live node selects among the proposed colors at random and tries it (which works with constant probability).
+
+Since no routing information is directly available, we need to be careful how the coloring information is gathered at the handlers. We use here a \emph{meet-in-the-middle} approach. Each handler informs a random subset of its d2-neighbors about itself and each colored node sends out its message along a host of short random walks. In most cases, if the numbers are chosen correctly, a random walk will find an informed node, which gets the message to the handler. 
+
+Once the unused palette is available, the coloring can be finished up in $O(\log n)$ rounds in the same fashion as the basic randomized {\congest} algorithm for ordinary coloring.
+
+\begin{quote}
+   \textbf{Algorithm} \emph{Improved-d2-Color}
+%    \emph{Precondition}: Each node has at most $\tau/\Delta$ immediate live neighbors \\
+%    \emph{Postcondition}: The graph is properly $D+1$-colored \\
+
+   If $\Delta^2 \ge c_2\log n$ then  \\
+%   1. Each node picks a random color and keeps it if none of its d2-neighbors picked it. \\
+   \hspace*{2em} repeat $c_0 \log n$ times: \\
+%   1. repeat $\Theta(\log n)$ times: \\
+   \hspace*{4em} Each live node picks a random color and \emph{tries} it. \\     
+   \hspace*{2em} Form the similarity graphs $H=H_{2/3}$ and $\hat{H} = H_{5/6}$ \\
+   \hspace*{2em} for ($\tau \leftarrow c_1 \Delta^2$; $\tau > c_2\log n$; $\tau \leftarrow \tau/2$) \\
+   \hspace*{4em}      \alg{Reduce}($2 \tau$, $\tau$) \\
+    \alg{LearnPalette}() \\
+    \alg{FinishColoring()}
+\end{quote}
+
+The main effort of this section is showing how to learn the remaining palette in $O(\log n)$ steps.
+%\section{Improved Final Phase}
+
+\paragraph{Learning the Available Palette}
+%
+Let $\varphi \le c\log n$ be an upper-bound on the leeway of live nodes.
+Let $Z$ and $P$ be quantities to be determined.
+We call each set $B_i = \{i\cdot \Delta^2/Z, i\cdot \Delta^2/Z+1, i\cdot \Delta^2/Z+2, \ldots, (i+1)\Delta^2/Z-1 \}$, $i=0,1,\ldots, Z-1$, a \emph{block} of colors. The last block $B_{Z-1}$ additionally contains the last color, $\Delta^2$. 
+There are then $Z$ blocks % $B_1,\ldots,B_Z$ 
+that partition the whole color space $[\Delta^2]$.
+
+\bigskip
+
+%\begin{quote}
+   \textbf{Algorithm} \emph{LearnPalette}() \\
+    \emph{Precondition}: Live nodes have leeway at most $\varphi \le c_2\log n$. \\
+%    , and each node has at most $\varphi/\Delta$ live immediate neighbors. \\
+  \emph{Postcondition}: Live nodes know their remaining palette
+%  \emph{Postcondition}: The graph is properly $d2$-colored.
+
+\begin{enumerate}
+  \item If $\Delta = O(\log n)$, then the nodes learn the remaining palette in $\Delta$ rounds by flooding, and halt.
+  \item Each node learns of its live d2-neighbors by flooding.
+  \item For each live node $v$ and each block $i \in \{1,\ldots, \Delta\}$ of colors, a random $H$-neighbor $z^i_v$ of $v$ is chosen.
+  % We verify that $v$ and $z^i_v$ share at least 1/2 of their d2-neighbors, by comparing $O(\log n)$-sized random samples of their neighborhoods, reselecting $z^i_v$ if needed.
+  \item Each node $z^i_v$ picks a random subset $Z_v^i$ of $P$ d2-neighbors (formed as a set of random 2-hop paths).\footnote{Do we need to constrain these nodes to be d2-neighbors of $v$?}
+  It informs them that it "handles" block $i$ of the palette of live node $v$ (which indirectly tells them also the 2-path back to $z^i_v$). 
+  \item Each colored node $u$ with color $c_u$ attempts to forward its color to some node in $Z_v^i$, where $i = \lfloor c(u) / \Delta \rfloor$, for each live d2-neighbor $v$. 
+  This is done by sending the color along $\Theta(\Delta^2/P \cdot \log n)$ different random 2-paths. The node in $Z_v^i$ then forwards it directly to $z^i_v$. Let $C^i_v$ denote the set of colors that $z^i_v$ learns of.
+  \item Each node $z_v^i$ informs $v$ by pipelining of the set $T_v^i = B_i \setminus C_v^i$ of colors missing within its range. 
+  \item $v$ informs its immediate neighbors by pipelining of $T_v= \cup_i T_v^i$, the colors that it has not learned of being in its neighborhood. Each such node $w$ returns the set $\hat{T}_{v,w}$, consisting of the colors in $T_v$ used among $w$'s immediate neighbors. $v$ removes those colors from $T_v$ to produce $T'_v = T_v \setminus \cup_w \hat{T}_{v,w}$, which yields the true remaining palette $[\Delta^2] \setminus T'_{v}$.
+%  \item $v$ informs all its d2-neighbors of $T_v= \cup_i T_v^i$ (by pipelining).
+%  \item Each d2-neighbor of $v$ whose color appears in $T_v$ informs $v$ of its color. Those colors are removed from $T_v$ to produce $T'_v \subseteq T_v$.
+\end{enumerate}
+%\end{quote}
+%  Observe that $T'_v$ maintains the current set of available colors for $v$, after Step 6 and through each iteration of Step 7. 
+ \medskip
+ 
+We first detail how a node $u$ selects a set of $m$ random d2-neighbors, as done in Steps 3, 4, and 5. It picks $m$ edges (with replacement) to its immediate neighbors at random and informs each node $w$ of the number $m_w$ of paths it is involved in. Each immediate neighbor $w$ then picks $m_w$ immediate neighbors. This way, $u$ does not directly learn the identity of the d2-neighbors it selects, but knows how to forward messages to each of them. Broadcasting or converge-casting individual messages then takes time $\max_{w \in N_G(v)} m_w$, which is $O(m/\Delta + \log n)$, w.h.p. (by (\ref{eq:concentration})).
+
+The key property of this phase is the following.
+
+\begin{lemma}
+$|T_v| = O(\log n)$, for every live node $v$, w.h.p.
+%If a live node $v$ is not $\zeta$-sparse, then all but $O(\zeta)$ colors of $v$'s d2-neighbors get recorded in $C_v = \cup_i C^i_v$, w.h.p.
+\label{l:last}
+\end{lemma}
+
+\begin{proof}
+By assumption, live node $v$ has leeway $O(\log n)$ at the start of the algorithm, and thus it has slack $O(\log n)$. 
+By the contrapositive of Prop.~\ref{P:sparsity}, it is $\zeta$-sparse, for $\zeta=O(\log n)$. 
+Thus, the $H$-degree of $v$ is at least $\Delta^2 - 40\zeta$, by Lem.~\ref{L:h-degree}. For all $H$-neighbors of $v$, a random 2-hop walk has probability at least $|Z_v^i|/\Delta^2 = P/\Delta^2$ of landing in $Z_v^i$. 
+Thus, w.h.p., one of the $\Theta((\Delta^2/P)\log n)$ random walks ends there, resulting in the color being recorded in $C_v$. 
+Hence, w.h.p., $|T_v| \le |N_{G^2}(v)\setminus N_H(v)| \le 40\zeta = O(\log n)$.
+\end{proof}
+
+% The correctness is immediate from the statement of the algorithm. 
+We now argue the round complexity of the algorithm.
+
+\begin{theorem}
+%The time complexity of \alg{AccountFor}($\varphi$) is $O(\varphi^{2/3}/\Delta^{1/3} \cdot \log n)$.
+The time complexity of \alg{LearnPalette}($\varphi$) with $\varphi=O(\log n)$ is $O(\log n)$, when $\Delta = \Omega(\log n)$.
+\label{T:learnpalette}
+\end{theorem}
+%
+\begin{proof}
+Each live node has $\Omega(\Delta^2)$ neighbors and selects $Z$ of them uniformly to become handling nodes. Thus, each node has probability $O(Z/\Delta^2)$ of becoming a handling node for a given live d2-neighbor, and since it has $O(\varphi)$ live d2-neighbors (by the precondition), it becomes a handling node for an expected $O(\varphi \cdot Z/\Delta^2)$ live nodes. 
+%\footnote{Here we use a weaker form of the precondition}
+\begin{itemize}
+\item The flooding in Step 2 takes as many rounds as there are live nodes in a immediate neighborhood, which is $O(\varphi)$.
+\item In Step 3 involves sending a single message to each handling node (of each live node), which is easily done in $O(1)$ expected time, or $O(\log n)$ time, w.h.p.
+\item In Step 4, each node forwards expected $P/\Delta$ messages from each handling immediate neighbor, and it has $O(Z\varphi/\Delta)$ such immediate neighbors. 
+Thus, it sends out $O(P Z\varphi/\Delta^2)$ messages to random neighbors, or $O(P Z \varphi/\Delta^3)$ message per outgoing edge, w.h.p. This takes time $O(PZ \varphi/\Delta^3)$. 
+\item In Step 5, a colored node needs to forward its color to the handling node $z_v^i$ of each of its $O(\varphi)$ live d2-neighbors. Since it is sent along $\Delta^2/P \log n$ paths, and due to the conductance,  w.h.p., the color reaches a node in $Z_v^i$ (the set of nodes informed of $z_v^i$). 
+
+The path from a colored node $u$ to a handler $z_v^i$ for a live node has two parts: the path $p_{u,w}$ from $u$ to an node $w$ that knows the path to $z_v^i$, and path $q_{w,z_v^i}$ from $w$ to $z_v^i$. 
+A given node $a$ has probability $1/\Delta^2$ of being an endpoint of a given path $p_{u,w}$ (from a d2-neighbor); there are $O(\varphi)$ live d2-neighbors (by the precondition, weaker form), $\Delta^2$ colored d2-neighbors, and $\Delta^2/P \log n$ copies of messages sent about each. Thus, a given node has expected 
+\[ O(\varphi \cdot \Delta^2 \cdot \Delta^2/P \log n \cdot 1/\Delta^2) = O(\varphi/P \cdot \Delta^2 \log n) \] 
+random paths going to it.
+Similar argument holds for a node being an intermediate node on a path $p_{u,w}$: the number of immediate neighbors goes to $\Delta$, while the probability of being a middle point on the path goes to $1/\Delta$, resulting in the same bound.
+Thus, the load on each edge is $O(\Delta \varphi/P \log n)$. 
+
+For the $q$-paths, the main congestion is going into the handler. Observe that there are only $O(\log n)$ $p$-paths that reach an informed node $w$. Hence, the number of paths going into a given handler is the product of the size of the block, times $\log n$: $\Delta^2/Z \cdot \log n)$. So, the load on an incoming edge into a handler is $O(\Delta/Z \log n)$, w.h.p. (when $Z = O(\Delta)$).
+
+\item The pipelining of Steps 6-7 takes $O(|T_v|)$ rounds, and by Lemma \ref{l:last}, $|T_v| = O(\log n)$, w.h.p. 
+
+\end{itemize}
+
+To summarize, the dominant terms of the time complexity are $O(\log n)$ (Steps 2, 6-7), $O(PZ\varphi/\Delta^3) = O(PZ (\log n)/\Delta^3)$ (Step 4), $O(\Delta\varphi/P \log n) = O(\Delta(\log n)^2/P)$ (first half of Step 5), and $O(\Delta/Z \log n)$ (second half of Step 5).
+
+Optimizing, we set $Z = \Delta$ and $P = \Delta \sqrt{\Delta\log n}$, 
+for time complexity of $O(\log n (1 + \sqrt{(\log n)/\Delta}))$, which is $O(\log n)$ when $\Delta = \Omega(\log n)$. 
+\end{proof}
+
+
+\paragraph{Finishing the coloring}
+
+By the time the algorithm reaches the last line, each node has $O(\log n)$ live d2-neighbors and knows the remaining palette. This includes the case when $\Delta^2 \le c_2\log n$, in which case no d2-neighbors are yet colored. 
+We can then simulate the basic randomized algorithm for ordinary colorings with constant overhead. 
+
+This algorithm, \alg{FinishColoring}, proceeds as follows:
+Each node $v$ repeats the following two-round procedure until it is successfully colored. 
+Flipping a random coin, $v$ is quiet or tries a random color from $T'_v$, with equal probability $1/2$.
+If it succeeds, it forwards that information to immediate neighbors. They promptly forward it to each of their immediate neighbors $w$, who promptly updated their remaining palette $T'_w$. If a node has a backlog of color notifications to forward, it sends out a \textsc{Busy} message. A node with a \textsc{Busy} neighbor then waits (stays quiet) until all notifications have been forwarded (and all \textsc{Busy} signals have been lifted from its immediate neighbors). 
+  %  \item $v$ tries a random color from $T'_v$ until it is successfully colored. When it becomes colored, it informs the other live d2-neighbors of its color, who update their set $T'_v$ accordingly.
+  %the colors in $T'_v$ in sequence, until colored.
+
+\begin{lemma}
+\alg{FinishColoring} completes in $O(\log n)$ rounds, w.h.p.
+\label{l:step7}
+\end{lemma}
+
+\begin{proof}
+A node waits for a busy neighbor for at most $O(\log n)$ rounds, since it has that many live d2-neighbors.
+Consider then a non-waiting round.
+With probability 1/2, at least half of the live d2-neighbors of $v$ are quiet. In this case, at least half of the colors of $v$'s palette are not tried by d2-neighbors, and hence, $v$ succeeds with probability at least $1/2$. The expected number of rounds is therefore $O(\log n)$, and by Chernoff (\ref{eq:concentration}), this holds also w.h.p.
+\end{proof}
+
+Combining Thm.~\ref{T:learnpalette} and Lemma \ref{l:step7} with the results of the previous subsection, we obtain the following bound on \alg{Improved-d2-Color}.
+
+\begin{theorem}
+\label{thm:d2ColoringRand}
+\alg{Improved-d2-Color} properly d2-colors a graph with $\Delta^2+1$ colors in $O(\log \Delta \log n)$ rounds, w.h.p.
+\end{theorem}
